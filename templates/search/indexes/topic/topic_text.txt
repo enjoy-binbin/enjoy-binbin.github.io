@@ -1,0 +1,2 @@
+{{ object.title }}
+{{ object.markdown_content }}
