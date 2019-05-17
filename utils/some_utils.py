@@ -30,4 +30,4 @@ def save_avatar_file(file):
     with open(file_path, 'wb') as f:
         for chunk in file.chunks():
             f.write(chunk)
-    return '/static/img/' + save_file_name
+    return '/media/img/' + save_file_name

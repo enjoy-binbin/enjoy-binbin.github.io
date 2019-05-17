@@ -38,10 +38,14 @@ from operation.views import (
     BalanceView,
     ThankReplyView
 )
+from django.urls import re_path
+
+from django.views.static import serve
+from v2ex.settings import MEDIA_ROOT
 
 urlpatterns = [
     # 管理员
-    path('admin/', admin.site.urls),
+    path('fuck/ppp/admin', admin.site.urls),
     # 首页，默认是最热节点 最多30条
     path('', IndexView.as_view(), name='index'),
     # re_path(r'^$', IndexView.as_view(), name='index'),
@@ -112,5 +116,7 @@ urlpatterns = [
     path('balance', BalanceView.as_view(), name='balance'),
 
     # haystack搜索
-    path('search', include('haystack.urls'))
+    path('search', include('haystack.urls')),
+
+    re_path(r'^media/(?P<path>.*)$', serve, {'document_root': MEDIA_ROOT}),
 ]

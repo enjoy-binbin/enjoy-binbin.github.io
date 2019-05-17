@@ -42,10 +42,21 @@ class SignupForm(forms.Form):
                                                'invalid': '密码格式错误',
                                                'min_length': '密码不能少于6位',
                                                'max_length': '密码最多50位'})
+    password2 = forms.CharField(min_length=6, max_length=50, required=True,
+                                error_messages={'required': '密码不能为空',
+                                                'invalid': '密码格式错误',
+                                                'min_length': '密码不能少于6位',
+                                                'max_length': '密码最多50位'})
     email = forms.EmailField(validators=[email_unique_validate, ], required=True,
                              error_messages={'required': '邮箱不能为空', 'invalid': '邮箱格式错误'})
     mobile = forms.CharField(validators=[mobile_validate, ], required=True,
                              error_messages={'required': '手机号不能为空'})
+
+    def clean(self):
+        if self.cleaned_data.get('password') != self.cleaned_data.get('password2'):
+            raise ValidationError('密码不一致')
+        else:
+            return self.cleaned_data
 
 
 class SigninForm(forms.Form):

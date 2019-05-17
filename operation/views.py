@@ -1,4 +1,4 @@
-import json
+import json, os
 from datetime import datetime, timedelta, date
 from django.shortcuts import HttpResponse, redirect, render, get_object_or_404
 from django.urls import reverse
@@ -463,6 +463,9 @@ class SendActivateCodeView(View):
         return HttpResponse(json.dumps(ret))
 
 
+from v2ex.settings import BASE_DIR
+
+
 class AvatarSettingView(View):
     @method_decorator(login_auth)
     def dispatch(self, request, *args, **kwargs):
@@ -483,13 +486,23 @@ class AvatarSettingView(View):
             # 判断文件大小，小于2M才可以
             if avatar.size <= 2 * 1024 * 1024:
                 avatar_path = save_avatar_file(avatar)
+                old_path = user_obj.avatar
+
                 user_obj.avatar = avatar_path
                 # 保存
                 user_obj.save()
                 request.session['user_info']['avatar'] = user_obj.avatar
                 has_error = False
+
+                # 删除原头像
+                try:
+                    if old_path != '/static/img/default-avatar.png':
+                        os.remove(os.path.join(BASE_DIR, '.' + old_path))
+                except:
+                    pass
             else:
                 avatar_size_error = "头像文件不能大于2M"
+
         return render(request, 'user/setting_avatar.html', locals())
 
 

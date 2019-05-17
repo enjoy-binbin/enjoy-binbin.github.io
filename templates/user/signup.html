@@ -45,6 +45,9 @@
                     {% if obj.errors.password.0 %}
                         <li>{{ obj.errors.password.0 }}</li>
                     {% endif %}
+                    {% if obj.errors.password2.0 %}
+                        <li>{{ obj.errors.password.0 }}</li>
+                    {% endif %}
                     {% if obj.errors.email.0 %}
                         <li>{{ obj.errors.email.0 }}</li>
                     {% endif %}
@@ -67,7 +70,7 @@
                             <div class="sep5"></div>
                             用户名
                         </td>
-                        <td width="auto" align="left"><input type="text" name="username" class="sls">
+                        <td width="auto" align="left"><input type="text" name="username" class="sls" value="{{ obj.data.username }}">
                             <div class="sep5"></div>
                             <span>请使用半角的 a-z 或数字 0-9</span></td>
                     </tr>
@@ -76,11 +79,15 @@
                         <td width="auto" align="left"><input type="password" name="password" class="sls"></td>
                     </tr>
                     <tr>
+                        <td width="120" align="right">确认密码</td>
+                        <td width="auto" align="left"><input type="password" name="password2" class="sls"></td>
+                    </tr>
+                    <tr>
                         <td width="120" align="right" valign="top">
                             <div class="sep5"></div>
                             电子邮件
                         </td>
-                        <td width="auto" align="left"><input type="text" name="email" class="sls">
+                        <td width="auto" align="left"><input type="text" name="email" class="sls" value="{{ obj.data.email }}">
                             <div class="sep5"></div>
                             <span>请使用真实电子邮箱注册，我们不会将你的邮箱地址分享给任何人</span></td>
                     </tr>
@@ -96,7 +103,7 @@
                             <div class="sep5"></div>
                             手机号
                         </td>
-                        <td width="auto" align="left"><input type="text" class="sls" name="mobile">
+                        <td width="auto" align="left"><input type="text" class="sls" name="mobile" value="{{ obj.data.mobile }}">
                             <div class="sep5"></div>
                         </td>
                     </tr>

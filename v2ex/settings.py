@@ -178,7 +178,7 @@ SESSION_ENGINE = "django.contrib.sessions.backends.cache"
 SESSION_CACHE_ALIAS = "session"
 SESSION_COOKIE_NAME = "sessionid"
 SESSION_COOKIE_PATH = "/"
-SESSION_COOKIE_AGE = 60 * 20
+SESSION_COOKIE_AGE = 60 * 60 * 24 * 20  # 20天(秒)
 # 用户刷新页面，重新设置缓存时间
 SESSION_SAVE_EVERY_REQUEST = True
 
@@ -201,7 +201,9 @@ EMAIL_FROM = 'V2EX<binloveplay1314@sina.com>'
 BASE_DOMAIN = 'http://127.0.0.1:8000'
 
 # 头像存放目录（当然也可以使用OSS等云存储，这里存储到本地）
-AVATAR_FILE_PATH = os.path.join(BASE_DIR, 'static', 'img')
+MEDIA_URL = '/media/'
+MEDIA_ROOT = os.path.join(BASE_DIR, "media")
+AVATAR_FILE_PATH = os.path.join(BASE_DIR, 'media', 'img')
 
 # CELERY 配置
 # BROKER 地址

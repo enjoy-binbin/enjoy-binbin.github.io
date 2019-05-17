@@ -11,6 +11,8 @@ from .models import UserProfile, UserFollowing
 from operation.models import TopicVote, FavoriteNode, Topic, UserDetails, SignedInfo
 from .forms import SignupForm, SigninForm
 
+from django.contrib.auth import login
+
 
 # Create your views here.
 
@@ -34,11 +36,11 @@ class SignupView(View):
 
     def post(self, request):
         has_error = True
+        obj = SignupForm(request.POST)
         if request.POST.get('check_code', None):
             # 判断验证码
             if request.session['CheckCode'].upper() == request.POST.get('check_code').upper():
                 # Form验证
-                obj = SignupForm(request.POST)
                 if obj.is_valid():
                     has_error = False
                     username = obj.cleaned_data['username']
@@ -53,9 +55,26 @@ class SignupView(View):
                     user_obj.set_password(password)
                     user_obj.save()
                     # 注册成功，创建用户details 表
-                    UserDetails.objects.create(user_id=user_obj.id)
-                    # 跳转到登录页
-                    return redirect(reverse('signin'))
+                    user_detail = UserDetails.objects.create(user_id=user_obj.id)
+                    user_info = {
+                        'username': username,
+                        'uid': user_obj.id,
+                        'avatar': user_obj.avatar,
+                        'mobile': user_obj.mobile,
+                        'favorite_node_num': FavoriteNode.objects.filter(favorite=1, user=user_obj).count(),
+                        'favorite_topic_num': TopicVote.objects.filter(favorite=1, user=user_obj).count(),
+                        'following_user_num': UserFollowing.objects.filter(is_following=1,
+                                                                           user=user_obj).count(),
+                        'show_balance': user_detail.show_balance,
+                        'balance': user_detail.balance,
+                        'daily_mission': True,
+                    }
+
+                    request.session['user_info'] = user_info
+
+                    return redirect(reverse('index'))
+                else:
+                    code_error = '两次密码不一致'
             else:
                 code_error = "验证码错误"
         else:
@@ -71,7 +90,7 @@ class SigninView(View):
     def post(self, request):
         has_error = True
         if request.POST.get('check_code', None):
-            if request.session['CheckCode'].upper() == request.POST.get('check_code').upper():
+            if request.session.get('CheckCode', '_None').upper() == request.POST.get('check_code').upper():
                 obj = SigninForm(request.POST)
                 if obj.is_valid():
                     username = obj.cleaned_data['username']
