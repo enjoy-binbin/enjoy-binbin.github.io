@@ -1,0 +1,222 @@
+
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta name="theme-color" content="#2879d0"/>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1"/>
+    <meta name="copyright" content="©2020 测试所有"/>
+    <link rel="stylesheet" href="/css/style.min.css" media="screen" type="text/css"/>
+
+    <!-- Begin SEO tag -->
+    <title>InnoDB缓存池</title>
+    <meta property="og:locale" content="zh_CN"/>
+    <meta property="og:type" content="article"/>
+    <meta property="og:title" content="InnoDB缓存池"/>
+    <meta property="og:description" content="InnoDB缓存池"/>
+    <meta property="og:url" content="#"/>
+    <meta property="og:site_name" content="InnoDB缓存池"/>
+    <meta name="description" content="InnoDB缓存池"/>
+    <!-- End SEO tag -->
+</head>
+
+<body>
+<header>
+    <div class="inner">
+        <a href="/">
+            <h1>彬彬同学丶</h1>
+        </a>
+        <h2>Choose what you love,love what you choose.</h2>
+    </div>
+</header>
+
+<div id="content-wrapper">
+    <div class="inner clearfix">
+        <section id="main-content">
+        
+            
+                <h1 id="art-title">InnoDB缓存池</h1>
+            
+            
+            
+                <p>记录Mysql中InnoDB缓存池和写缓存相关笔记</p>
+<p><em>Base on Mysql5.7</em></p>
+<p>应用系统分层架构，为了加速数据访问，常常会把最常访问的数据（热数据），放在<strong>缓存</strong>（cache）里，避免每次读请求都去访问数据库，从而提升读性能。</p>
+<p>操作系统中，也类似，会有<strong>缓冲池</strong>(buffer pool)的机制，避免每次读取数据都访问磁盘，以加速数据的访问。这是因为磁盘读的性能，相对于内存来说，速度太慢。</p>
+<p>MySQL作为一个存储系统，同样具有<strong>缓冲池</strong>(buffer pool)机制，以避免每次查询数据都进行磁盘IO。</p>
+<p><strong>InnoDB的缓冲池缓存什么？有什么用？</strong></p>
+<p>InnoDB缓冲池将表的索引和数据进行缓存，缓冲池允许从内存直接处理频繁使用的数据，这加快了处理速度，避免每次访问都进行磁盘IO。在专用数据库服务器上，通常将多达80％的物理内存分配给InnoDB缓冲池。然后使用LRU算法来管理这些缓存数据。</p>
+<p>因为InnoDB的存储引擎的工作方式总是将数据库文件按页读取到缓冲池，数据管理的最小单位是页，每个页16k（默认值），5.7版本中增加了32KB和64KB的页面大小支持。</p>
+<p>下面单位都是字节，可以看到一页默认大小是16KB，而缓存池大小是8MB（个人电脑），实际是会很大的，配置缓冲池的大小，在内存允许的情况下，DBA往往会建议调大这个参数，越多数据和索引放到内存里，数据库的性能就会越好。</p>
+<div class="highlight"><pre><span></span><span class="n">mysql</span><span class="o">&gt;</span> <span class="k">show</span> <span class="n">variables</span> <span class="k">like</span> <span class="s1">&#39;innodb_page_size&#39;</span><span class="p">;</span>
+<span class="o">+------------------+-------+</span>
+<span class="o">|</span> <span class="n">Variable_name</span>    <span class="o">|</span> <span class="n">Value</span> <span class="o">|</span>
+<span class="o">+------------------+-------+</span>
+<span class="o">|</span> <span class="n">innodb_page_size</span> <span class="o">|</span> <span class="mi">16384</span> <span class="o">|</span>
+<span class="o">+------------------+-------+</span>
+<span class="mi">1</span> <span class="n">row</span> <span class="k">in</span> <span class="kt">set</span><span class="p">,</span> <span class="mi">1</span> <span class="nf">warning</span> <span class="p">(</span><span class="mi">0</span><span class="p">.</span><span class="mi">00</span> <span class="n">sec</span><span class="p">)</span>
+
+<span class="n">mysql</span><span class="o">&gt;</span> <span class="k">show</span> <span class="n">variables</span> <span class="k">like</span> <span class="s1">&#39;%innodb_buffer_pool_size&#39;</span><span class="p">;</span>
+<span class="o">+-------------------------+---------+</span>
+<span class="o">|</span> <span class="n">Variable_name</span>           <span class="o">|</span> <span class="n">Value</span>   <span class="o">|</span>
+<span class="o">+-------------------------+---------+</span>
+<span class="o">|</span> <span class="n">innodb_buffer_pool_size</span> <span class="o">|</span> <span class="mi">8388608</span> <span class="o">|</span>
+<span class="o">+-------------------------+---------+</span>
+<span class="mi">1</span> <span class="n">row</span> <span class="k">in</span> <span class="kt">set</span><span class="p">,</span> <span class="mi">1</span> <span class="nf">warning</span> <span class="p">(</span><span class="mi">0</span><span class="p">.</span><span class="mi">03</span> <span class="n">sec</span><span class="p">)</span>
+</pre></div>
+<p>还可以使用<code>show engine innodb status \G</code>命令可以查看缓存池的具体使用情况</p>
+<p><em>更多深入可以看：<a href="https://www.cnblogs.com/ilifeilong/p/7224678.html">https://www.cnblogs.com/ilifeilong/p/7224678.html</a></em></p>
+<p>速度快，那<strong>为啥不把所有数据都放到缓冲池里</strong>？</p>
+<p>凡事都具备两面性，抛开数据易失性不说（断电内存数据丢失），访问快速的反面是存储容量小和造价贵：</p>
+<p>（1）缓存访问快，但容量小，数据库存储了200G数据，缓存容量可能只有64G；</p>
+<p>（2）内存访问快，但容量小，买一台笔记本磁盘有1T，内存可能只有8G；</p>
+<p>因此，只能把“最热”的数据放到“最近”的地方，以“最大限度”的降低磁盘访问。</p>
+<p><strong>如何管理与淘汰缓冲池，使得性能最大化呢？</strong></p>
+<p>在介绍具体细节之前，先介绍下“预读”的概念。</p>
+<p><strong>什么是预读？</strong></p>
+<p>磁盘读写，并不是按需读取，而是按页读取，一次至少读一页数据（一般是4K，而在InnoDB中一页默认是16K），如果未来要读取的数据就在页中，就能够省去后续的磁盘IO，提高效率。</p>
+<p><em>关于磁盘IO更多可以看：<a href="https://zhuanlan.zhihu.com/p/28569735">https://zhuanlan.zhihu.com/p/28569735</a></em></p>
+<p><strong>预读为什么有效？</strong></p>
+<p>数据访问，通常都遵循“集中读写”的原则，使用一些数据，大概率会使用到附近的数据，程序运行期间所需要的数据通常比较集中，而且磁盘顺序读写效率较随机读写高（不需要寻道时间），这就是所谓的“局部性原理”，它表明提前加载是有效的，确实能够减少磁盘IO。预读是来了一个IO请求，会异步在缓存池中预先回迁多个页面，预计后面很快就会使用到这些页面，从而加速IO。</p>
+<p>InnoDB中使用两种预读算法来提高IO性能。线性预读（linear read-ahead）和随机预读（randomread-ahead）</p>
+<p>可以通过以下命令查看</p>
+<div class="highlight"><pre><span></span><span class="n">mysql</span><span class="o">&gt;</span> <span class="k">show</span> <span class="n">variables</span> <span class="k">like</span> <span class="s1">&#39;%read_ahead%&#39;</span><span class="p">;</span>
+<span class="o">+-----------------------------+-------+</span>
+<span class="o">|</span> <span class="n">Variable_name</span>               <span class="o">|</span> <span class="n">Value</span> <span class="o">|</span>
+<span class="o">+-----------------------------+-------+</span>
+<span class="o">|</span> <span class="n">innodb_random_read_ahead</span>    <span class="o">|</span> <span class="n">OFF</span>   <span class="o">|</span>
+<span class="o">|</span> <span class="n">innodb_read_ahead_threshold</span> <span class="o">|</span> <span class="mi">56</span>    <span class="o">|</span>
+<span class="o">+-----------------------------+-------+</span>
+<span class="mi">2</span> <span class="n">rows</span> <span class="k">in</span> <span class="kt">set</span><span class="p">,</span> <span class="mi">1</span> <span class="nf">warning</span> <span class="p">(</span><span class="mi">0</span><span class="p">.</span><span class="mi">00</span> <span class="n">sec</span><span class="p">)</span>
+</pre></div>
+<p><em>关于预读更多相关可以看：<a href="https://www.cnblogs.com/geaozhang/p/7397699.html">https://www.cnblogs.com/geaozhang/p/7397699.html</a></em></p>
+<p><strong>按页(4K)读取，和InnoDB的缓冲池设计有啥关系？</strong></p>
+<p>页是计算机管理存储器的逻辑块，硬件和操作系统往往将主存和磁盘存储区分割为连续的大小相等的块，每一个存储块称为一页（在许多操作系统里，页都是4KB- 12位的地址，有4096个页内地址）。主存和磁盘以页为单位进行交换数据，预读的长度一般是页的整数倍</p>
+<p>（1）磁盘访问按页读取能够提高性能，所以缓冲池一般也是按页缓存数据；</p>
+<p>（2）预读机制启示了我们，能把一些“可能要访问”的页提前加入缓冲池，避免未来的磁盘IO操作；</p>
+<p><em>关于磁盘读写更多相关可以看：<a href="https://blog.csdn.net/u011954647/article/details/45536367">https://blog.csdn.net/u011954647/article/details/45536367</a></em></p>
+<p><strong>InnoDB是以什么算法，来管理这些缓冲页呢？</strong></p>
+<p>最容易想到的，就是LRU(Least recently used)。即最近最少使用，是一种常用的页面置换算法，选择最近最久未使用的页面予以淘汰，memcache，OS都会用LRU来进行页置换管理，但MySQL的玩法并不一样。</p>
+<p><strong>传统的LRU是如何进行缓冲页管理？</strong></p>
+<p>最常见的做法是，把入缓冲池的页放到LRU的头部，作为最近访问的元素，从而最晚被淘汰。这里又分两种情况：</p>
+<p>（1）<strong>页已经在缓冲池里</strong>，那就只做“移至”LRU头部的动作，而没有页被淘汰；</p>
+<p>（2）<strong>页不在缓冲池里</strong>，除了做“放入”LRU头部的动作，还要做“淘汰”LRU尾部页的动作；</p>
+<p>为了减少数据移动，LRU一般会使用链表来实现。下面简单的演示一下</p>
+<pre><code>               Head                           Tail
+LRU  --------&gt;  1       2       3       4       5
+如上面，假如LRU长度为5，只能缓存五页的内容
+
+
+场景一：假如要访问的数据在第4页，经过访问后LRU变成下面这样，4原本就在，么有页被淘汰
+               Head                           Tail
+LRU  --------&gt;  4       1       2       3       5
+
+
+场景二：假如要访问的数据在第6页，6不在，会淘汰最后一页，也就是会淘汰掉5，同时6插入到头部
+               Head                           Tail
+LRU  --------&gt;  6       4       1       2       3
+</code></pre>
+<p><strong>传统的LRU缓冲池算法十分直观</strong>，OS，memcache等很多软件都在用，<strong>MySQL为啥不直接用呢？</strong></p>
+<p>这里有两个问题：预读失效和缓冲池污染</p>
+<p><strong>什么是预读失效？如何优化预读失效</strong></p>
+<p>由于预读(Read-Ahead)，提前把页放入了缓冲池，但最终MySQL并没有从页中读取数据，就叫预读失效。</p>
+<p>要优化预读失效，思路是：</p>
+<p>（1）让预读失败的页，停留在缓冲池LRU里的时间尽可能短；</p>
+<p>（2）让真正会被读取的页，才挪到缓冲池LRU的头部；</p>
+<p>从而保证，真正被读取的热数据留在缓冲池里的时间尽可能长。</p>
+<p>具体方法是：</p>
+<p>（1）将LRU分为两个部分：</p>
+<ul>
+<li>新生代(new sublist)</li>
+<li>老生代(old sublist)</li>
+</ul>
+<p>（2）新老生代收尾相连，即：新生代的尾(tail)连接着老生代的头(head)；</p>
+<p>（3）新页（例如被预读的页）加入缓冲池时，只加入到老生代头部：</p>
+<ul>
+<li>如果数据真正被读取（预读成功），才会加入到新生代的头部</li>
+<li>如果数据没有被读取，则会比新生代里的“热数据页”更早被淘汰出缓冲池</li>
+</ul>
+<pre><code>         Head                                          Tail
+LRU ---&gt;  1     2       3       4       5       6       7       8       9       10
+                                                               Head            Tail
+如上图，整个LRU长度是10，前70%是新生代，后30%是老生代，新老生代首尾是相连的。
+
+假如有个新页被预读要假如缓存池，他只会插入老生代的头部，老生代的尾部（也就是整体尾部）的页会被淘汰。
+假如这页不会被读取到，也就是预读失败，他将会比新生代的页更早的淘汰出缓存池。
+假如这页被读取到，例如SQL访问了页内的行记录row数据，这一页会立刻被加到新生代的头部
+新生代的尾巴页会被挤到老生代的头部，此时并不会有页面被真正的淘汰。
+
+mysql&gt; show variables like '%innodb_old_blocks_pct';
++-----------------------+-------+
+| Variable_name         | Value |
++-----------------------+-------+
+| innodb_old_blocks_pct | 37    |
++-----------------------+-------+
+1 row in set, 1 warning (0.00 sec)
+</code></pre>
+<p>老生代占整个LRU链长度的比例，默认是37，即整个LRU中新生代与老生代长度比例是63:37。</p>
+<p>可以通过<code>innodb_old_blocks_pct</code>参数设置，<em>如果把这个参数设为100，就退化为普通LRU了</em></p>
+<p>改进版缓冲池LRU能够很好的解决“预读失败”的问题。</p>
+<p>但也不要因噎废食，因为害怕预读失败而取消预读策略，大部分情况下，局部性原理是成立的，预读是有效的。</p>
+<p>新老生代改进版LRU仍然解决不了缓冲池污染的问题。</p>
+<p><strong>什么是MySQL缓冲池污染？</strong></p>
+<p>当某一个SQL语句，要批量扫描大量数据时，可能会把缓冲池的所有页都替换出去，导致大量热数据被换出，MySQL性能急剧下降，这种情况就叫缓冲池污染。</p>
+<p>例如，有一个数据量较大的用户表，当执行如下的模糊查询语句：</p>
+<p>select * from user where name like "%xxx%";</p>
+<p>虽然结果集可能只有少量数据，但这类like是不能命中索引的，必须全表扫描，就需要访问大量的页：</p>
+<p>（1）把页加到缓冲池（先插入老生代头部）；</p>
+<p>（2）从页里读出相关的row（会插入新生代头部）；</p>
+<p>（3）row里的name字段和字符串xxx进行比较，如果符合条件，加入到结果集中；</p>
+<p>（4）重复，直到扫描完所有页中的所有row</p>
+<p>如此一来，所有被访问到的数据页都会被加载到新生代的头部，但只会访问一次，真正的热数据被大量换出。</p>
+<p><strong>怎么这类扫码大量数据导致的缓冲池污染问题呢？</strong></p>
+<p>MySQL缓冲池加入了一个“老生代停留时间窗口”的机制，只有满足一定条件的才会放到新生代头部</p>
+<p>（1）假设T=老生代停留时间窗口；</p>
+<p>（2）插入老生代头部的页，即使立刻被访问，并不会立刻放入新生代头部；</p>
+<p>（3）只有<strong>满足</strong>“被访问”并且“在老生代停留时间”大于T，才会被放入新生代头部；</p>
+<p>继续举例，假如批量数据扫描，有6，7，8，9，10等五个页面将要依次被访问。</p>
+<p>如果没有“老生代停留时间窗口”的策略，这些批量被访问的页面，会换出大量热数据（1，2，3，4，5等页）。</p>
+<p>加入“老生代停留时间窗口”策略后，短时间内被大量加载的页，并不会立刻插入新生代头部，而是优先淘汰那些，短期内仅仅访问了一次的页。</p>
+<p>而只有在老生代呆的时间足够久，停留时间大于T，才会被插入新生代头部。默认时间为1000毫秒，如下面。即同时满足“被访问”与“在老生代停留时间超过1秒”两个条件，才会被插入到新生代头部。</p>
+<div class="highlight"><pre><span></span><span class="n">mysql</span><span class="o">&gt;</span> <span class="k">show</span> <span class="n">variables</span> <span class="k">like</span> <span class="s1">&#39;%innodb_old_blocks_time&#39;</span><span class="p">;</span>
+<span class="o">+------------------------+-------+</span>
+<span class="o">|</span> <span class="n">Variable_name</span>          <span class="o">|</span> <span class="n">Value</span> <span class="o">|</span>
+<span class="o">+------------------------+-------+</span>
+<span class="o">|</span> <span class="n">innodb_old_blocks_time</span> <span class="o">|</span> <span class="mi">1000</span>  <span class="o">|</span>
+<span class="o">+------------------------+-------+</span>
+<span class="mi">1</span> <span class="n">row</span> <span class="k">in</span> <span class="kt">set</span><span class="p">,</span> <span class="mi">1</span> <span class="nf">warning</span> <span class="p">(</span><span class="mi">0</span><span class="p">.</span><span class="mi">00</span> <span class="n">sec</span><span class="p">)</span>
+</pre></div>
+<p><strong>总结</strong></p>
+<p>（1）缓冲池(buffer pool)是一种<strong>常见的降低磁盘访问的机制；</strong></p>
+<p>（2）缓冲池通常<strong>以页(page)为单位缓存数据，</strong>InnoDB中一页默认是16KB</p>
+<p>（3）缓冲池的<strong>常见管理算法是LRU</strong>，memcache，OS，InnoDB都使用了这种算法；</p>
+<p>（4）InnoDB对普通LRU进行了优化：</p>
+<ul>
+<li>将缓冲池分为<strong>老生代和新生代</strong>，入缓冲池的页，优先进入老生代，页被访问，才进入新生代，以解决预读失效的问题，老生代占37%。</li>
+<li>页被访问，且在老生代<strong>停留时间超过配置阈值</strong>的，才进入新生代，以解决批量数据访问，大量热数据淘汰的问题，时间阈值默认为1秒。</li>
+</ul>
+<p><em>衍生阅读：<a href="https://zhuanlan.zhihu.com/p/65811829">https://zhuanlan.zhihu.com/p/65811829</a></em></p>
+<p><em>58沈剑 架构师之路</em></p>
+
+            
+            
+            
+
+        </section>
+
+        <aside id="sidebar">
+            <blockquote class="route">关于我</blockquote>
+            <p>19本科毕业生，代码的搬运工，此界面灵感来自公众号【运维咖啡吧】</p>
+            
+            <blockquote class="route">Github地址</blockquote>
+            <a href="https://github.com/enjoy-binbin">
+                <img border="0" src="https://avatars2.githubusercontent.com/u/22811481" width="100%" height="100%" alt="enjoy-binbin"/>
+            </a>
+            
+            
+        </aside>
+    </div>
+</div>
+</body>
+
+</html>

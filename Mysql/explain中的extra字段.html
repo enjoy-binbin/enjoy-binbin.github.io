@@ -1,0 +1,103 @@
+
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta name="theme-color" content="#2879d0"/>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1"/>
+    <meta name="copyright" content="©2020 测试所有"/>
+    <link rel="stylesheet" href="/css/style.min.css" media="screen" type="text/css"/>
+
+    <!-- Begin SEO tag -->
+    <title>explain中的extra字段</title>
+    <meta property="og:locale" content="zh_CN"/>
+    <meta property="og:type" content="article"/>
+    <meta property="og:title" content="explain中的extra字段"/>
+    <meta property="og:description" content="explain中的extra字段"/>
+    <meta property="og:url" content="#"/>
+    <meta property="og:site_name" content="explain中的extra字段"/>
+    <meta name="description" content="explain中的extra字段"/>
+    <!-- End SEO tag -->
+</head>
+
+<body>
+<header>
+    <div class="inner">
+        <a href="/">
+            <h1>彬彬同学丶</h1>
+        </a>
+        <h2>Choose what you love,love what you choose.</h2>
+    </div>
+</header>
+
+<div id="content-wrapper">
+    <div class="inner clearfix">
+        <section id="main-content">
+        
+            
+                <h1 id="art-title">explain中的extra字段</h1>
+            
+            
+            
+                <p>对于MySQL，有一大利器，就是explain，用来查看语句的执行计划，其中除了type字段（连接类型），还有个extra字段，对分析和优化SQL语句也有很大的帮助。</p>
+<p><em>Base on Mysql5.7 InnoDB</em></p>
+<p><strong>准备数据</strong></p>
+<div class="highlight"><pre><span></span><span class="k">create</span> <span class="k">table</span> <span class="nf">user</span><span class="p">(</span>
+    <span class="n">id</span> <span class="kt">int</span> <span class="k">primary</span> <span class="k">key</span><span class="p">,</span>
+    <span class="n">name</span> <span class="kt">varchar</span><span class="p">(</span><span class="mi">20</span><span class="p">),</span>
+    <span class="n">sex</span> <span class="kt">varchar</span><span class="p">(</span><span class="mi">6</span><span class="p">),</span>
+    <span class="k">index</span><span class="p">(</span><span class="n">name</span><span class="p">)</span>
+<span class="p">)</span> <span class="kp">engine</span><span class="o">=</span><span class="n">innodb</span><span class="p">;</span>
+
+<span class="k">insert</span> <span class="k">into</span> <span class="n">user</span> <span class="k">values</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="s1">&#39;张三&#39;</span><span class="p">,</span><span class="s1">&#39;male&#39;</span><span class="p">);</span>
+<span class="k">insert</span> <span class="k">into</span> <span class="n">user</span> <span class="k">values</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="s1">&#39;彬彬&#39;</span><span class="p">,</span><span class="s1">&#39;female&#39;</span><span class="p">);</span>
+<span class="k">insert</span> <span class="k">into</span> <span class="n">user</span> <span class="k">values</span><span class="p">(</span><span class="mi">3</span><span class="p">,</span> <span class="s1">&#39;李四&#39;</span><span class="p">,</span> <span class="s1">&#39;male&#39;</span><span class="p">);</span>
+<span class="k">insert</span> <span class="k">into</span> <span class="n">user</span> <span class="k">values</span><span class="p">(</span><span class="mi">4</span><span class="p">,</span> <span class="s1">&#39;李四&#39;</span><span class="p">,</span> <span class="s1">&#39;female&#39;</span><span class="p">);</span>
+</pre></div>
+<p><strong>数据说明：</strong></p>
+<p>用户表，其中id为主键索引，name上有个普通索引（非唯一），四条用户记录，其中李四存在重复记录。</p>
+<p><strong>实验目的：</strong></p>
+<p>通过构造各类SQL语句，观察explain执行计划里的extra字段</p>
+<p><strong>1. Using where</strong></p>
+<p>实验语句：<em>select \</em> from user where sex='male'*</p>
+<p>结果说明：Using where说明，SQL使用了where条件来过滤数据，不过type的值是ALL，说明是走的全表扫描，全表效率是非常慢的。Tips：基本所有查询语句，都要加上where条件来过滤数据。</p>
+<p><img src="/media/editor/explain中的extra字段-1.png" alt=""></p>
+<p><strong>2. Using index</strong></p>
+<p>实验语句：<em>select id, name from user where name='李四'</em></p>
+<p>结果说明：Using index说明，需要查询的所有列数据都在name那个B+索引树上，无需回表访问实际的行记录。这个语句用到了覆盖索引，不需要再访问主键索引树。知识点：组合索引，最左匹配</p>
+<p>第二条语句多查询了一个sex列，命中name索引，但是就没有用到覆盖索引了，因为sex字段不存在name的索引树上，需要根据name索引树上的主键id，去主键索引树上查询行记录。这个就叫做回表。如果此类语句使用比较频繁，可以将name索引升级为(name, sex)组合索引，就能用到索引覆盖了</p>
+<p><img src="/media/editor/explain中的extra字段-2.png" alt=""></p>
+<p><strong>3. Using filesort</strong></p>
+<p>结果说明：Using filesort，得到所需结果集，需要对所有记录进行文件排序。</p>
+<p><img src="/media/editor/explain中的extra字段-3.png" alt=""></p>
+<p><strong>4. Using temporary</strong></p>
+<p>结果说明：Using temporary，需要建立临时表(temporary table)来暂存中间结果。</p>
+<p><img src="/media/editor/explain中的extra字段-4.png" alt=""></p>
+<p><strong>5. Using join buffer</strong></p>
+<p>结果说明：第一条Using temporary，需要建立临时表(temporary table)来暂存中间结果。内层和外层均为全表扫描，且需要进行嵌套循环计算，典型的两个关联表进行join，关联字段未建立索引</p>
+<p>第二条是把name普通索引升级为(name, sex)组合索引后的执行计划，就有用到索引</p>
+<p><img src="/media/editor/explain中的extra字段-5.png" alt=""></p>
+<p>课外阅读：58沈剑（架构师之路），参考有修改（估计版本不一致，输出结果有些差异）</p>
+
+            
+            
+            
+
+        </section>
+
+        <aside id="sidebar">
+            <blockquote class="route">关于我</blockquote>
+            <p>19本科毕业生，代码的搬运工，此界面灵感来自公众号【运维咖啡吧】</p>
+            
+            <blockquote class="route">Github地址</blockquote>
+            <a href="https://github.com/enjoy-binbin">
+                <img border="0" src="https://avatars2.githubusercontent.com/u/22811481" width="100%" height="100%" alt="enjoy-binbin"/>
+            </a>
+            
+            
+        </aside>
+    </div>
+</div>
+</body>
+
+</html>

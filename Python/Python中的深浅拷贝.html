@@ -1,0 +1,288 @@
+
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta name="theme-color" content="#2879d0"/>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1"/>
+    <meta name="copyright" content="©2020 测试所有"/>
+    <link rel="stylesheet" href="/css/style.min.css" media="screen" type="text/css"/>
+
+    <!-- Begin SEO tag -->
+    <title>Python中的深浅拷贝</title>
+    <meta property="og:locale" content="zh_CN"/>
+    <meta property="og:type" content="article"/>
+    <meta property="og:title" content="Python中的深浅拷贝"/>
+    <meta property="og:description" content="Python中的深浅拷贝"/>
+    <meta property="og:url" content="#"/>
+    <meta property="og:site_name" content="Python中的深浅拷贝"/>
+    <meta name="description" content="Python中的深浅拷贝"/>
+    <!-- End SEO tag -->
+</head>
+
+<body>
+<header>
+    <div class="inner">
+        <a href="/">
+            <h1>彬彬同学丶</h1>
+        </a>
+        <h2>Choose what you love,love what you choose.</h2>
+    </div>
+</header>
+
+<div id="content-wrapper">
+    <div class="inner clearfix">
+        <section id="main-content">
+        
+            
+                <h1 id="art-title">Python中的深浅拷贝</h1>
+            
+            
+            
+                <p>深浅拷贝，都是指对象的拷贝。下面简单记录下两者的笔记。</p>
+<p><em>下面代码Base on Python3.6</em></p>
+<p>不可变类型：数字、字符串、元组</p>
+<p>可变类型：列表、字典、集合</p>
+<p><em>其中元组是相对不可变，元组里不变得是引用，下面有个例子就能很好的说明</em></p>
+<pre><code>&gt;&gt;&gt; t = (1, 2, [3, 4])
+&gt;&gt;&gt; t[2].append(5)
+&gt;&gt;&gt; t
+(1, 2, [3, 4, 5])
+</code></pre>
+<p>复制列表（或多数内置的可变集合），最简单的方式就是使用内置的类型构造方法，这里默认是做的浅拷贝。下面list(l1)创建了l1的副本，并给了它一个别名<code>l2</code>，（Python中垃圾回收是用的引用计数）。可以看到副本和源是相等的，但是指代的是不同的对象。这里其实还能用 l2 = l1[:] 的方式来创建副本。</p>
+<div class="highlight"><pre><span></span><span class="o">&gt;&gt;&gt;</span> <span class="n">l1</span> <span class="o">=</span> <span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="p">[</span><span class="mi">3</span><span class="p">,</span> <span class="mi">4</span><span class="p">],</span> <span class="p">(</span><span class="mi">5</span><span class="p">,</span> <span class="mi">6</span><span class="p">,</span> <span class="mi">7</span><span class="p">)]</span>
+<span class="o">&gt;&gt;&gt;</span> <span class="n">l2</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">l1</span><span class="p">)</span>
+<span class="o">&gt;&gt;&gt;</span>
+<span class="o">&gt;&gt;&gt;</span> <span class="n">l2</span>
+<span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="p">[</span><span class="mi">3</span><span class="p">,</span> <span class="mi">4</span><span class="p">],</span> <span class="p">(</span><span class="mi">5</span><span class="p">,</span> <span class="mi">6</span><span class="p">,</span> <span class="mi">7</span><span class="p">)]</span>
+<span class="o">&gt;&gt;&gt;</span> <span class="n">l2</span> <span class="o">==</span> <span class="n">l1</span>
+<span class="bp">True</span>
+<span class="o">&gt;&gt;&gt;</span> <span class="n">l2</span> <span class="ow">is</span> <span class="n">l1</span>
+<span class="bp">False</span>
+<span class="o">&gt;&gt;&gt;</span>
+</pre></div>
+<p>然而上面的创建方法做的都是浅拷贝（即只复制了最外层容器，副本中的元素是源容器中元素的引用）。如果所有元素都是不可变的，这有做没有问题，还能节省内存。但是如果容器里有可变的元素，可能就会导致不易察觉的问题。</p>
+<div class="highlight"><pre><span></span><span class="o">&gt;&gt;&gt;</span> <span class="n">l1</span>
+<span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="p">[</span><span class="mi">3</span><span class="p">,</span> <span class="mi">4</span><span class="p">],</span> <span class="p">(</span><span class="mi">5</span><span class="p">,</span> <span class="mi">6</span><span class="p">,</span> <span class="mi">7</span><span class="p">)]</span>
+<span class="o">&gt;&gt;&gt;</span> <span class="n">l2</span>
+<span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="p">[</span><span class="mi">3</span><span class="p">,</span> <span class="mi">4</span><span class="p">],</span> <span class="p">(</span><span class="mi">5</span><span class="p">,</span> <span class="mi">6</span><span class="p">,</span> <span class="mi">7</span><span class="p">)]</span>
+<span class="o">&gt;&gt;&gt;</span>
+<span class="o">&gt;&gt;&gt;</span> <span class="n">l1</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="mi">8</span><span class="p">)</span>  <span class="c1"># 在l1中添加元素不会影响到l2</span>
+<span class="o">&gt;&gt;&gt;</span> <span class="n">l1</span>
+<span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="p">[</span><span class="mi">3</span><span class="p">,</span> <span class="mi">4</span><span class="p">],</span> <span class="p">(</span><span class="mi">5</span><span class="p">,</span> <span class="mi">6</span><span class="p">,</span> <span class="mi">7</span><span class="p">),</span> <span class="mi">8</span><span class="p">]</span>
+<span class="o">&gt;&gt;&gt;</span> <span class="n">l2</span>
+<span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="p">[</span><span class="mi">3</span><span class="p">,</span> <span class="mi">4</span><span class="p">],</span> <span class="p">(</span><span class="mi">5</span><span class="p">,</span> <span class="mi">6</span><span class="p">,</span> <span class="mi">7</span><span class="p">)]</span>
+<span class="o">&gt;&gt;&gt;</span>
+<span class="o">&gt;&gt;&gt;</span> <span class="n">l1</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span><span class="o">.</span><span class="n">remove</span><span class="p">(</span><span class="mi">3</span><span class="p">)</span>  <span class="c1"># 把l1里内部列表中的3删除，对l2有影响，因为他们两l1[2]和l2[2]绑定的列表是同一个</span>
+<span class="o">&gt;&gt;&gt;</span> <span class="n">l1</span>
+<span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="p">[</span><span class="mi">4</span><span class="p">],</span> <span class="p">(</span><span class="mi">5</span><span class="p">,</span> <span class="mi">6</span><span class="p">,</span> <span class="mi">7</span><span class="p">),</span> <span class="mi">8</span><span class="p">]</span>
+<span class="o">&gt;&gt;&gt;</span> <span class="n">l2</span>
+<span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="p">[</span><span class="mi">4</span><span class="p">],</span> <span class="p">(</span><span class="mi">5</span><span class="p">,</span> <span class="mi">6</span><span class="p">,</span> <span class="mi">7</span><span class="p">)]</span>
+<span class="o">&gt;&gt;&gt;</span>
+<span class="o">&gt;&gt;&gt;</span> <span class="n">l2</span><span class="p">[</span><span class="mi">3</span><span class="p">]</span> <span class="o">+=</span> <span class="p">(</span><span class="mi">77</span><span class="p">,</span> <span class="mi">88</span><span class="p">)</span>  <span class="c1"># 对于不可变元组来说, += 运算符创建了一个新元组，然后重新绑定给变量l2[3]，所以下面l1 l2中元组不是同一个对象了</span>
+<span class="o">&gt;&gt;&gt;</span> <span class="n">l1</span>
+<span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="p">[</span><span class="mi">4</span><span class="p">],</span> <span class="p">(</span><span class="mi">5</span><span class="p">,</span> <span class="mi">6</span><span class="p">,</span> <span class="mi">7</span><span class="p">),</span> <span class="mi">8</span><span class="p">]</span>
+<span class="o">&gt;&gt;&gt;</span> <span class="n">l2</span>
+<span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="p">[</span><span class="mi">4</span><span class="p">],</span> <span class="p">(</span><span class="mi">5</span><span class="p">,</span> <span class="mi">6</span><span class="p">,</span> <span class="mi">7</span><span class="p">,</span> <span class="mi">77</span><span class="p">,</span> <span class="mi">88</span><span class="p">)]</span>
+<span class="o">&gt;&gt;&gt;</span> <span class="n">l2</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span> <span class="o">+=</span> <span class="p">[</span><span class="mi">0</span><span class="p">]</span>  <span class="c1"># 对可变列表来说，+= 运算符就地修改了列表，所以也影响到了l1，因为都是指代同一个列表对象，是个别名</span>
+<span class="o">&gt;&gt;&gt;</span> <span class="n">l1</span>
+<span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="p">[</span><span class="mi">4</span><span class="p">,</span> <span class="mi">0</span><span class="p">],</span> <span class="p">(</span><span class="mi">5</span><span class="p">,</span> <span class="mi">6</span><span class="p">,</span> <span class="mi">7</span><span class="p">),</span> <span class="mi">8</span><span class="p">]</span>
+<span class="o">&gt;&gt;&gt;</span> <span class="n">l2</span>
+<span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="p">[</span><span class="mi">4</span><span class="p">,</span> <span class="mi">0</span><span class="p">],</span> <span class="p">(</span><span class="mi">5</span><span class="p">,</span> <span class="mi">6</span><span class="p">,</span> <span class="mi">7</span><span class="p">,</span> <span class="mi">77</span><span class="p">,</span> <span class="mi">88</span><span class="p">)]</span>
+</pre></div>
+<p>有时候我们需要深拷贝（即副本不共享内部对象的引用）。copy模块中提供的copy函数和deepcopy函数能为任意对象做浅拷贝和深拷贝。例子来自fluent python。另外字典自带的copy()方法也可以实现字典的深拷贝。</p>
+<div class="highlight"><pre><span></span><span class="k">class</span> <span class="nc">Bus</span><span class="p">:</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">passengers</span><span class="o">=</span><span class="bp">None</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">passengers</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">:</span>  <span class="c1"># 这里没有给默认参数空列表, 后面有补充</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">passengers</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">passengers</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">passengers</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">pick</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">passengers</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">name</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">drop</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">passengers</span><span class="o">.</span><span class="n">remove</span><span class="p">(</span><span class="n">name</span><span class="p">)</span>
+
+<span class="kn">import</span> <span class="nn">copy</span>
+<span class="n">bus1</span> <span class="o">=</span> <span class="n">Bus</span><span class="p">([</span><span class="s1">&#39;A&#39;</span><span class="p">,</span> <span class="s1">&#39;B&#39;</span><span class="p">,</span> <span class="s1">&#39;C&#39;</span><span class="p">,</span> <span class="s1">&#39;D&#39;</span><span class="p">])</span>
+<span class="n">bus2</span> <span class="o">=</span> <span class="n">copy</span><span class="o">.</span><span class="n">copy</span><span class="p">(</span><span class="n">bus1</span><span class="p">)</span>  <span class="c1"># 浅拷贝</span>
+<span class="n">bus3</span> <span class="o">=</span> <span class="n">copy</span><span class="o">.</span><span class="n">deepcopy</span><span class="p">(</span><span class="n">bus1</span><span class="p">)</span>  <span class="c1"># 深拷贝</span>
+<span class="k">print</span><span class="p">(</span><span class="n">bus1</span><span class="o">.</span><span class="n">passengers</span><span class="p">)</span>  <span class="c1"># [&#39;A&#39;, &#39;B&#39;, &#39;C&#39;, &#39;D&#39;]</span>
+<span class="k">print</span><span class="p">(</span><span class="n">bus2</span><span class="o">.</span><span class="n">passengers</span><span class="p">)</span>  <span class="c1"># [&#39;A&#39;, &#39;B&#39;, &#39;C&#39;, &#39;D&#39;]</span>
+<span class="k">print</span><span class="p">(</span><span class="n">bus3</span><span class="o">.</span><span class="n">passengers</span><span class="p">)</span>  <span class="c1"># [&#39;A&#39;, &#39;B&#39;, &#39;C&#39;, &#39;D&#39;]</span>
+<span class="k">print</span><span class="p">(</span><span class="nb">id</span><span class="p">(</span><span class="n">bus1</span><span class="p">),</span> <span class="nb">id</span><span class="p">(</span><span class="n">bus2</span><span class="p">),</span> <span class="nb">id</span><span class="p">(</span><span class="n">bus3</span><span class="p">))</span>  <span class="c1"># (4314497464, 4314497392, 4314497608)</span>
+<span class="k">print</span><span class="p">(</span><span class="nb">id</span><span class="p">(</span><span class="n">bus1</span><span class="o">.</span><span class="n">passengers</span><span class="p">),</span> <span class="nb">id</span><span class="p">(</span><span class="n">bus2</span><span class="o">.</span><span class="n">passengers</span><span class="p">),</span> <span class="nb">id</span><span class="p">(</span><span class="n">bus3</span><span class="o">.</span><span class="n">passengers</span><span class="p">))</span>  <span class="c1"># (4314497536, 4314497536, 4314438832)</span>
+
+<span class="n">bus1</span><span class="o">.</span><span class="n">drop</span><span class="p">(</span><span class="s1">&#39;A&#39;</span><span class="p">)</span>  <span class="c1"># 这里bus1中的A下车了, 发现bus2的也下车了, 因为它们共享一个列表对象</span>
+<span class="k">print</span><span class="p">(</span><span class="n">bus1</span><span class="o">.</span><span class="n">passengers</span><span class="p">)</span>  <span class="c1"># [&#39;B&#39;, &#39;C&#39;, &#39;D&#39;]</span>
+<span class="k">print</span><span class="p">(</span><span class="n">bus2</span><span class="o">.</span><span class="n">passengers</span><span class="p">)</span>  <span class="c1"># [&#39;B&#39;, &#39;C&#39;, &#39;D&#39;]</span>
+<span class="k">print</span><span class="p">(</span><span class="n">bus3</span><span class="o">.</span><span class="n">passengers</span><span class="p">)</span>  <span class="c1"># [&#39;A&#39;, &#39;B&#39;, &#39;C&#39;, &#39;D&#39;]</span>
+<span class="k">print</span><span class="p">(</span><span class="nb">id</span><span class="p">(</span><span class="n">bus1</span><span class="p">),</span> <span class="nb">id</span><span class="p">(</span><span class="n">bus2</span><span class="p">),</span> <span class="nb">id</span><span class="p">(</span><span class="n">bus3</span><span class="p">))</span>  <span class="c1"># (4314497464, 4314497392, 4314497608)</span>
+<span class="k">print</span><span class="p">(</span><span class="nb">id</span><span class="p">(</span><span class="n">bus1</span><span class="o">.</span><span class="n">passengers</span><span class="p">),</span> <span class="nb">id</span><span class="p">(</span><span class="n">bus2</span><span class="o">.</span><span class="n">passengers</span><span class="p">),</span> <span class="nb">id</span><span class="p">(</span><span class="n">bus3</span><span class="o">.</span><span class="n">passengers</span><span class="p">))</span>  <span class="c1"># (4314497536, 4314497536, 4314438832)</span>
+</pre></div>
+<div class="highlight"><pre><span></span><span class="p">[</span><span class="s1">&#39;A&#39;</span><span class="p">,</span> <span class="s1">&#39;B&#39;</span><span class="p">,</span> <span class="s1">&#39;C&#39;</span><span class="p">,</span> <span class="s1">&#39;D&#39;</span><span class="p">]</span>
+<span class="p">[</span><span class="s1">&#39;A&#39;</span><span class="p">,</span> <span class="s1">&#39;B&#39;</span><span class="p">,</span> <span class="s1">&#39;C&#39;</span><span class="p">,</span> <span class="s1">&#39;D&#39;</span><span class="p">]</span>
+<span class="p">[</span><span class="s1">&#39;A&#39;</span><span class="p">,</span> <span class="s1">&#39;B&#39;</span><span class="p">,</span> <span class="s1">&#39;C&#39;</span><span class="p">,</span> <span class="s1">&#39;D&#39;</span><span class="p">]</span>
+<span class="p">(</span><span class="mi">4314497464</span><span class="p">,</span> <span class="mi">4314497392</span><span class="p">,</span> <span class="mi">4314497608</span><span class="p">)</span>
+<span class="p">(</span><span class="mi">4314497536</span><span class="p">,</span> <span class="mi">4314497536</span><span class="p">,</span> <span class="mi">4314438832</span><span class="p">)</span>
+<span class="p">[</span><span class="s1">&#39;B&#39;</span><span class="p">,</span> <span class="s1">&#39;C&#39;</span><span class="p">,</span> <span class="s1">&#39;D&#39;</span><span class="p">]</span>
+<span class="p">[</span><span class="s1">&#39;B&#39;</span><span class="p">,</span> <span class="s1">&#39;C&#39;</span><span class="p">,</span> <span class="s1">&#39;D&#39;</span><span class="p">]</span>
+<span class="p">[</span><span class="s1">&#39;A&#39;</span><span class="p">,</span> <span class="s1">&#39;B&#39;</span><span class="p">,</span> <span class="s1">&#39;C&#39;</span><span class="p">,</span> <span class="s1">&#39;D&#39;</span><span class="p">]</span>
+<span class="p">(</span><span class="mi">4314497464</span><span class="p">,</span> <span class="mi">4314497392</span><span class="p">,</span> <span class="mi">4314497608</span><span class="p">)</span>
+<span class="p">(</span><span class="mi">4314497536</span><span class="p">,</span> <span class="mi">4314497536</span><span class="p">,</span> <span class="mi">4314438832</span><span class="p">)</span>
+<span class="p">[</span><span class="n">Finished</span> <span class="ow">in</span> <span class="mf">0.0</span><span class="n">s</span><span class="p">]</span>
+</pre></div>
+<p>循环引用的例子。一般来说，深拷贝如果对象有循环引用，那么这个朴素的算法会进入无限循环，deepcopy函数会记住已经复制过的对象，因此能优雅的处理循环引用。此外还有特殊方法<code>__copy__</code>和<code>__deepcopy__</code>可以控制copy和deepcopy的行为。</p>
+<p><em><a href="http://docs.python.org/3/library/copy.html">http://docs.python.org/3/library/copy.html</a></em></p>
+<div class="highlight"><pre><span></span><span class="o">&gt;&gt;&gt;</span> <span class="n">a</span> <span class="o">=</span> <span class="p">[</span><span class="mi">10</span><span class="p">,</span> <span class="mi">20</span><span class="p">]</span>
+<span class="o">&gt;&gt;&gt;</span> <span class="n">b</span> <span class="o">=</span> <span class="p">[</span><span class="n">a</span><span class="p">,</span> <span class="mi">30</span><span class="p">]</span>
+<span class="o">&gt;&gt;&gt;</span> <span class="n">a</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">b</span><span class="p">)</span>
+<span class="o">&gt;&gt;&gt;</span>
+<span class="o">&gt;&gt;&gt;</span> <span class="n">a</span>
+<span class="p">[</span><span class="mi">10</span><span class="p">,</span> <span class="mi">20</span><span class="p">,</span> <span class="p">[[</span><span class="o">...</span><span class="p">],</span> <span class="mi">30</span><span class="p">]]</span>
+<span class="o">&gt;&gt;&gt;</span> <span class="n">b</span>
+<span class="p">[[</span><span class="mi">10</span><span class="p">,</span> <span class="mi">20</span><span class="p">,</span> <span class="p">[</span><span class="o">...</span><span class="p">]],</span> <span class="mi">30</span><span class="p">]</span>
+<span class="o">&gt;&gt;&gt;</span>
+<span class="o">&gt;&gt;&gt;</span> <span class="kn">from</span> <span class="nn">copy</span> <span class="kn">import</span> <span class="n">deepcopy</span>
+<span class="o">&gt;&gt;&gt;</span> <span class="n">c</span> <span class="o">=</span> <span class="n">deepcopy</span><span class="p">(</span><span class="n">a</span><span class="p">)</span>
+<span class="o">&gt;&gt;&gt;</span> <span class="n">c</span>
+<span class="p">[</span><span class="mi">10</span><span class="p">,</span> <span class="mi">20</span><span class="p">,</span> <span class="p">[[</span><span class="o">...</span><span class="p">],</span> <span class="mi">30</span><span class="p">]]</span>
+<span class="o">&gt;&gt;&gt;</span> <span class="nb">id</span><span class="p">(</span><span class="n">a</span><span class="p">),</span> <span class="nb">id</span><span class="p">(</span><span class="n">b</span><span class="p">),</span> <span class="nb">id</span><span class="p">(</span><span class="n">c</span><span class="p">)</span>
+<span class="p">(</span><span class="mi">4319924424</span><span class="p">,</span> <span class="mi">4319925576</span><span class="p">,</span> <span class="mi">4319924360</span><span class="p">)</span>
+<span class="o">&gt;&gt;&gt;</span>
+</pre></div>
+<h4>使用可变对象作为参数默认值的<code>坑</code></h4>
+<p>Python唯一致富的参数传递模式是共享传参数（call by sharing），多数面向对象语言都是这种方式，Java中引用类型是这样，基本类型是按值传递。</p>
+<p>共享传参值函数的各个形式参数获得实参中各个引用的副本，也就是说，函数内部的形参是实参的别名。</p>
+<p>先看一个简单的例子 使用可变值作为默认值，这里的默认参数是个空列表，是不是结果和预期的不符合。因为默认参数是会存在一个<code>__defaults__</code>的变量里。三个默认参数lis都是同一个对象。</p>
+<div class="highlight"><pre><span></span><span class="o">&gt;&gt;&gt;</span> <span class="k">def</span> <span class="nf">func</span><span class="p">(</span><span class="n">lis</span><span class="o">=</span><span class="p">[]):</span>
+<span class="o">...</span>     <span class="n">lis</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="mi">5</span><span class="p">)</span>
+<span class="o">...</span>     <span class="k">print</span><span class="p">(</span><span class="n">lis</span><span class="p">)</span>
+<span class="o">...</span>
+<span class="o">&gt;&gt;&gt;</span>
+<span class="o">&gt;&gt;&gt;</span> <span class="n">func</span><span class="p">()</span>
+<span class="p">[</span><span class="mi">5</span><span class="p">]</span>
+<span class="o">&gt;&gt;&gt;</span> <span class="n">func</span><span class="p">()</span>
+<span class="p">[</span><span class="mi">5</span><span class="p">,</span> <span class="mi">5</span><span class="p">]</span>
+<span class="o">&gt;&gt;&gt;</span> <span class="n">func</span><span class="p">()</span>
+<span class="p">[</span><span class="mi">5</span><span class="p">,</span> <span class="mi">5</span><span class="p">,</span> <span class="mi">5</span><span class="p">]</span>
+<span class="o">&gt;&gt;&gt;</span>
+<span class="o">&gt;&gt;&gt;</span> <span class="n">func</span>
+<span class="o">&lt;</span><span class="n">function</span> <span class="n">func</span> <span class="n">at</span> <span class="mh">0x1017c3a60</span><span class="o">&gt;</span>
+<span class="o">&gt;&gt;&gt;</span> <span class="n">func</span><span class="o">.</span><span class="vm">__defaults__</span>
+<span class="p">([</span><span class="mi">5</span><span class="p">,</span> <span class="mi">5</span><span class="p">,</span> <span class="mi">5</span><span class="p">],)</span>
+</pre></div>
+<p>函数可能会修改接受到的任何可变对象。</p>
+<div class="highlight"><pre><span></span><span class="o">&gt;&gt;</span> <span class="k">def</span> <span class="nf">f</span><span class="p">(</span><span class="n">a</span><span class="p">,</span><span class="n">b</span><span class="p">):</span>
+<span class="o">...</span>     <span class="n">a</span> <span class="o">+=</span> <span class="n">b</span>
+<span class="o">...</span>     <span class="k">return</span> <span class="n">a</span>
+<span class="o">...</span>
+<span class="o">&gt;&gt;&gt;</span>
+<span class="o">&gt;&gt;&gt;</span> <span class="n">x</span> <span class="o">=</span> <span class="mi">1</span>
+<span class="o">&gt;&gt;&gt;</span> <span class="n">y</span> <span class="o">=</span> <span class="mi">2</span>
+<span class="o">&gt;&gt;&gt;</span> <span class="n">f</span><span class="p">(</span><span class="n">x</span><span class="p">,</span><span class="n">y</span><span class="p">)</span>
+<span class="mi">3</span>
+<span class="o">&gt;&gt;&gt;</span> <span class="n">x</span>
+<span class="mi">1</span>
+<span class="o">&gt;&gt;&gt;</span> <span class="n">y</span>
+<span class="mi">2</span>
+<span class="o">&gt;&gt;&gt;</span>
+<span class="o">&gt;&gt;&gt;</span>
+<span class="o">&gt;&gt;&gt;</span> <span class="n">x</span> <span class="o">=</span> <span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">]</span>
+<span class="o">&gt;&gt;&gt;</span> <span class="n">y</span> <span class="o">=</span> <span class="p">[</span><span class="mi">3</span><span class="p">,</span> <span class="mi">4</span><span class="p">]</span>
+<span class="o">&gt;&gt;&gt;</span> <span class="n">f</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">)</span>
+<span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="mi">4</span><span class="p">]</span>
+<span class="o">&gt;&gt;&gt;</span> <span class="n">x</span>  <span class="c1"># x列表变了</span>
+<span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="mi">4</span><span class="p">]</span>
+<span class="o">&gt;&gt;&gt;</span> <span class="n">y</span>
+<span class="p">[</span><span class="mi">3</span><span class="p">,</span> <span class="mi">4</span><span class="p">]</span>
+<span class="o">&gt;&gt;&gt;</span>
+<span class="o">&gt;&gt;&gt;</span>
+<span class="o">&gt;&gt;&gt;</span> <span class="n">x</span> <span class="o">=</span> <span class="p">(</span><span class="mi">1</span><span class="p">,</span><span class="mi">2</span><span class="p">)</span>
+<span class="o">&gt;&gt;&gt;</span> <span class="n">y</span> <span class="o">=</span> <span class="p">(</span><span class="mi">3</span><span class="p">,</span><span class="mi">4</span><span class="p">)</span>
+<span class="o">&gt;&gt;&gt;</span> <span class="n">f</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">)</span>
+<span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="mi">4</span><span class="p">)</span>
+<span class="o">&gt;&gt;&gt;</span> <span class="n">x</span>
+<span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">)</span>
+<span class="o">&gt;&gt;&gt;</span> <span class="n">y</span>
+<span class="p">(</span><span class="mi">3</span><span class="p">,</span> <span class="mi">4</span><span class="p">)</span>
+</pre></div>
+<p>流畅的Python中的例子: 幽灵校车</p>
+<div class="highlight"><pre><span></span><span class="k">class</span> <span class="nc">HauntedBus</span><span class="p">:</span>
+    <span class="sd">&quot;&quot;&quot; 流畅的Python中的例子: 幽灵校车 &quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">passengers</span><span class="o">=</span><span class="p">[]):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">passengers</span> <span class="o">=</span> <span class="n">passengers</span>
+
+    <span class="k">def</span> <span class="nf">pick</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">passengers</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">name</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">drop</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">passengers</span><span class="o">.</span><span class="n">remove</span><span class="p">(</span><span class="n">name</span><span class="p">)</span>
+
+<span class="n">bus1</span> <span class="o">=</span> <span class="n">HauntedBus</span><span class="p">([</span><span class="s1">&#39;A&#39;</span><span class="p">,</span> <span class="s1">&#39;B&#39;</span><span class="p">])</span>  <span class="c1"># 这样子的bus1无异常</span>
+<span class="k">print</span><span class="p">(</span><span class="n">bus1</span><span class="o">.</span><span class="n">passengers</span><span class="p">)</span>  <span class="c1"># [&#39;A&#39;, &#39;B&#39;]</span>
+<span class="n">bus1</span><span class="o">.</span><span class="n">pick</span><span class="p">(</span><span class="s1">&#39;C&#39;</span><span class="p">)</span>
+<span class="n">bus1</span><span class="o">.</span><span class="n">drop</span><span class="p">(</span><span class="s1">&#39;A&#39;</span><span class="p">)</span>
+<span class="k">print</span><span class="p">(</span><span class="n">bus1</span><span class="o">.</span><span class="n">passengers</span><span class="p">)</span>  <span class="c1"># [&#39;B&#39;, &#39;C&#39;]</span>
+
+<span class="n">bus2</span> <span class="o">=</span> <span class="n">HauntedBus</span><span class="p">()</span>
+<span class="n">bus2</span><span class="o">.</span><span class="n">pick</span><span class="p">(</span><span class="s1">&#39;D&#39;</span><span class="p">)</span>
+<span class="n">bus2</span><span class="o">.</span><span class="n">pick</span><span class="p">(</span><span class="s1">&#39;E&#39;</span><span class="p">)</span>
+<span class="k">print</span><span class="p">(</span><span class="n">bus2</span><span class="o">.</span><span class="n">passengers</span><span class="p">)</span>  <span class="c1"># [&#39;D&#39;, &#39;E&#39;]</span>
+
+<span class="n">bus3</span> <span class="o">=</span> <span class="n">HauntedBus</span><span class="p">()</span>
+<span class="k">print</span><span class="p">(</span><span class="n">bus3</span><span class="o">.</span><span class="n">passengers</span><span class="p">)</span>  <span class="c1"># [&#39;D&#39;, &#39;E&#39;]  # 对于bus3来说, 默认列表不为空</span>
+<span class="n">bus3</span><span class="o">.</span><span class="n">pick</span><span class="p">(</span><span class="s1">&#39;F&#39;</span><span class="p">)</span>
+<span class="k">print</span><span class="p">(</span><span class="n">bus3</span><span class="o">.</span><span class="n">passengers</span><span class="p">)</span>  <span class="c1"># [&#39;D&#39;, &#39;E&#39;, &#39;F&#39;]</span>
+<span class="k">print</span><span class="p">(</span><span class="n">bus2</span><span class="o">.</span><span class="n">passengers</span><span class="p">)</span>  <span class="c1"># [&#39;D&#39;, &#39;E&#39;, &#39;F&#39;]</span>
+
+<span class="k">print</span><span class="p">(</span><span class="n">bus2</span><span class="o">.</span><span class="n">passengers</span> <span class="ow">is</span> <span class="n">bus3</span><span class="o">.</span><span class="n">passengers</span><span class="p">)</span>  <span class="c1"># 两者是同一对象</span>
+
+<span class="k">print</span><span class="p">(</span><span class="n">HauntedBus</span><span class="o">.</span><span class="fm">__init__</span><span class="o">.</span><span class="vm">__defaults__</span><span class="p">)</span>  <span class="c1"># ([&#39;D&#39;, &#39;E&#39;, &#39;F&#39;],)</span>
+<span class="k">print</span><span class="p">(</span><span class="n">auntedBus</span><span class="o">.</span><span class="fm">__init__</span><span class="o">.</span><span class="vm">__defaults__</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="ow">is</span> <span class="n">bus2</span><span class="o">.</span><span class="n">passengers</span><span class="p">)</span>  <span class="c1"># True</span>
+<span class="k">print</span><span class="p">(</span><span class="n">HauntedBus</span><span class="o">.</span><span class="fm">__init__</span><span class="o">.</span><span class="n">__annotations__</span><span class="p">)</span>  <span class="c1"># {}</span>
+</pre></div>
+<p>对于这种可变参数的影响，需要编写方和调用方约定，谨慎处理还是 当passengers为None时，创建一个新的列表，而不是用一个默认参数列表。</p>
+<div class="highlight"><pre><span></span><span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">passengers</span><span class="o">=</span><span class="bp">None</span><span class="p">):</span>
+    <span class="k">if</span> <span class="n">passengers</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">:</span>  <span class="c1"># 这里没有给默认参数空列表, 填坑</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">passengers</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="c1"># self.passengers = passengers  # 这里还是创建了别名</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">passengers</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">passengers</span><span class="p">)</span>  <span class="c1"># 更好的方法是自己维护这个列表</span>
+</pre></div>
+<p>补充：对元组 t 来说，t[:] 不创建副本，而是返回同一个对 象的引用。此外，tuple(t) 获得的也是同一个元组的引用。 这是CPython做的一些优化手段。</p>
+<pre><code>&gt;&gt;&gt; t1 = (1, 2)
+&gt;&gt;&gt; t2 = tuple(t1)
+&gt;&gt;&gt; t3 = t2[:]
+&gt;&gt;&gt; id(t1)
+2577964067656
+&gt;&gt;&gt; id(t2)
+2577964067656
+&gt;&gt;&gt; id(t3)
+2577964067656
+</code></pre>
+
+            
+            
+            
+
+        </section>
+
+        <aside id="sidebar">
+            <blockquote class="route">关于我</blockquote>
+            <p>19本科毕业生，代码的搬运工，此界面灵感来自公众号【运维咖啡吧】</p>
+            
+            <blockquote class="route">Github地址</blockquote>
+            <a href="https://github.com/enjoy-binbin">
+                <img border="0" src="https://avatars2.githubusercontent.com/u/22811481" width="100%" height="100%" alt="enjoy-binbin"/>
+            </a>
+            
+            
+        </aside>
+    </div>
+</div>
+</body>
+
+</html>

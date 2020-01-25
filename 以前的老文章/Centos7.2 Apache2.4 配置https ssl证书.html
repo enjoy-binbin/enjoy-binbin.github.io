@@ -1,0 +1,80 @@
+
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta name="theme-color" content="#2879d0"/>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1"/>
+    <meta name="copyright" content="©2020 测试所有"/>
+    <link rel="stylesheet" href="/css/style.min.css" media="screen" type="text/css"/>
+
+    <!-- Begin SEO tag -->
+    <title>Centos7.2 Apache2.4 配置https ssl证书</title>
+    <meta property="og:locale" content="zh_CN"/>
+    <meta property="og:type" content="article"/>
+    <meta property="og:title" content="Centos7.2 Apache2.4 配置https ssl证书"/>
+    <meta property="og:description" content="Centos7.2 Apache2.4 配置https ssl证书"/>
+    <meta property="og:url" content="#"/>
+    <meta property="og:site_name" content="Centos7.2 Apache2.4 配置https ssl证书"/>
+    <meta name="description" content="Centos7.2 Apache2.4 配置https ssl证书"/>
+    <!-- End SEO tag -->
+</head>
+
+<body>
+<header>
+    <div class="inner">
+        <a href="/">
+            <h1>彬彬同学丶</h1>
+        </a>
+        <h2>Choose what you love,love what you choose.</h2>
+    </div>
+</header>
+
+<div id="content-wrapper">
+    <div class="inner clearfix">
+        <section id="main-content">
+        
+            
+                <h1 id="art-title">Centos7.2 Apache2.4 配置https ssl证书</h1>
+            
+            
+            
+                <p><h2 style="border-bottom-color:#cccccc;border-bottom-width:2px;border-bottom-style:solid;padding:0px 4px 0px 0px;margin:0px 0px 10px;text-align:center;" class="ue_t">Centos7.2 Apache2.4 配置https ssl证书</h2><p><strong><span style="font-size:12px;">摘要</span></strong><span style="font-size:12px;" class="ue_t">：由于前面寒假大部分时间用来研究了微信小程序,里面的request只能发送https请求,现在有空也将自己服务器配置成了https<br/> </span></p><p><span style="font-size:12px;" class="ue_t"><img src="http://img.baidu.com/hi/tsj/t_0038.gif"/>&nbsp;&nbsp;&nbsp;&nbsp;</span></p><p style="line-height:1.5em;"><strong>1. 证书获取</strong></p><p style="text-indent:2em;"><span style="font-size:14px;">腾讯免费ssl证书获取</span></p><p style="text-indent:2em;"><span style="font-size:14px;">https://www.qcloud.com/product/ssl</span></p><p style="text-indent:2em;"><span style="font-size:14px;">立即使用-&gt;申请证书(免费版DVSSL证书 一年申请一次即可)<br/>&nbsp;&nbsp; &nbsp;&nbsp;&nbsp; &nbsp;-&gt;填写信息(域名,邮箱,备注名一般也为域名即可) 其他不用填-&gt; 下一步<br/>&nbsp;&nbsp; &nbsp;&nbsp;&nbsp; &nbsp;-&gt; 等待五分钟左右(因为我是腾讯云服务器,所以他会自己自动配置好域名解析信息)<br/>&nbsp;&nbsp; &nbsp;&nbsp;&nbsp; &nbsp;如果是其他服务器,就请读者自己百度吧。。<br/>&nbsp;&nbsp; &nbsp;&nbsp;&nbsp; &nbsp;五分钟左右申请通过,域名解析信息也帮你配好了<br/>&nbsp;&nbsp; &nbsp;&nbsp;&nbsp; &nbsp;将证书下载到本地<br/>&nbsp;&nbsp; &nbsp;&nbsp;&nbsp; &nbsp;解压后有三个文件夹,对应不同服务器<br/>&nbsp;&nbsp; &nbsp;&nbsp;&nbsp; &nbsp;将apache目录下的三个文件 复制到 服务器上 /etc/httpd/conf 下(这个可以自己决定存放位置)</span></p><p style="text-indent:2em;"><span style="font-size:14px;"><br/> </span></p><p style="line-height:1.5em;"><strong>2. 配置ssl</strong></p><p style="text-indent:2em;"><span style="font-size:14px;">参考&nbsp;&nbsp;&nbsp;&nbsp; <a href="https://www.qcloud.com/document/product/400/4143)" _src="https://www.qcloud.com/document/product/400/4143)">https://www.qcloud.com/document/product/400/4143</a><br/> </span></p><p style="text-indent:2em;"><span style="font-size:14px;"> 2.1 安装ssl</span></p><pre class="brush:php;toolbar:false">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;yum&nbsp;list&nbsp;all&nbsp;mod_ssl&nbsp;
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;yum&nbsp;install&nbsp;-y&nbsp;mod_ssl</pre><p style="text-indent:2em;"><span style="font-size:14px;"></span>&nbsp;&nbsp;&nbsp;&nbsp;安装后apache会自动引入ssl模块</p><pre class="brush:groovy;toolbar:false">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;rpm&nbsp;-qc&nbsp;mod_ssl</pre><p style="text-indent:2em;">&nbsp;&nbsp;&nbsp;&nbsp;/etc/httpd/conf.d/ssl.conf 即为ssl配置文件</p><p style="text-indent:2em;">2.2 配置ssl</p><pre class="brush:erlang;toolbar:false">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;cd&nbsp;/etc/httpd/conf.d
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;cp&nbsp;ssl.conf&nbsp;./ssl.conf.0202.bak
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;vi&nbsp;ssl.conf&nbsp;#(或者用外部编辑器打开)</pre><p style="text-indent:2em;">&nbsp;&nbsp;&nbsp;&nbsp;下面的配置我都建议在原来的基础上 复制新的一行,将上行注释并写点说明信息(如时间)</p><pre class="brush:erlang;toolbar:false">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;59行&nbsp;取消这两行的注释#
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;#DocumentRoot&nbsp;&quot;/var/www/html&quot;
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;#ServerName&nbsp;www.example.com:443
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;#&nbsp;2017年2月2日&nbsp;01:03:53&nbsp;修改
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;DocumentRoot&nbsp;&quot;/var/www/html&quot;
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;ServerName&nbsp;www.example.com:443</p>
+<p>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;##&nbsp;下面这三个文件根据自己前面下载的证书放置(&nbsp;我将其放在了etc/httpd/conf下)
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;100行&nbsp;SSLCertificateFile&nbsp;/etc/pki/tls/certs/localhost.crt
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;SSLCertificateFile&nbsp;/etc/httpd/conf/2_www.zz-bin.cn.crt</p>
+<p>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;107行&nbsp;SSLCertificateKeyFile&nbsp;/etc/pki/tls/private/localhost.key
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;SSLCertificateKeyFile&nbsp;/etc/httpd/conf/3_www.zz-bin.cn.key</p>
+<p>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;116行&nbsp;#SSLCertificateChainFile&nbsp;/etc/pki/tls/certs/server-chain.crt
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;SSLCertificateChainFile&nbsp;/etc/httpd/conf/1_root_bundle.crt&lt;/pre&gt;<p style="text-indent:2em;"><span style="font-size:14px;" class="ue_t"> </span><br/> </p><p style="line-height:1.5em;"><strong>3.&nbsp; 重启apache<br/> </strong></p><pre class="brush:delphi;toolbar:false">&nbsp;&nbsp;&nbsp;&nbsp;systemctl&nbsp;restart&nbsp;httpd</pre><p><br/> </p><p><strong>4.&nbsp; 访问 https 域名成功</strong><br/> </p><p><img src="http://img.baidu.com/hi/tsj/t_0040.gif"/> &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;&nbsp; <br/> </p></p>
+
+            
+            
+            
+
+        </section>
+
+        <aside id="sidebar">
+            <blockquote class="route">关于我</blockquote>
+            <p>19本科毕业生，代码的搬运工，此界面灵感来自公众号【运维咖啡吧】</p>
+            
+            <blockquote class="route">Github地址</blockquote>
+            <a href="https://github.com/enjoy-binbin">
+                <img border="0" src="https://avatars2.githubusercontent.com/u/22811481" width="100%" height="100%" alt="enjoy-binbin"/>
+            </a>
+            
+            
+        </aside>
+    </div>
+</div>
+</body>
+
+</html>

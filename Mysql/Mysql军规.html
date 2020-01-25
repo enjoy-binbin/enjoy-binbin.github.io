@@ -1,0 +1,255 @@
+
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta name="theme-color" content="#2879d0"/>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1"/>
+    <meta name="copyright" content="©2020 测试所有"/>
+    <link rel="stylesheet" href="/css/style.min.css" media="screen" type="text/css"/>
+
+    <!-- Begin SEO tag -->
+    <title>Mysql军规</title>
+    <meta property="og:locale" content="zh_CN"/>
+    <meta property="og:type" content="article"/>
+    <meta property="og:title" content="Mysql军规"/>
+    <meta property="og:description" content="Mysql军规"/>
+    <meta property="og:url" content="#"/>
+    <meta property="og:site_name" content="Mysql军规"/>
+    <meta name="description" content="Mysql军规"/>
+    <!-- End SEO tag -->
+</head>
+
+<body>
+<header>
+    <div class="inner">
+        <a href="/">
+            <h1>彬彬同学丶</h1>
+        </a>
+        <h2>Choose what you love,love what you choose.</h2>
+    </div>
+</header>
+
+<div id="content-wrapper">
+    <div class="inner clearfix">
+        <section id="main-content">
+        
+            
+                <h1 id="art-title">Mysql军规</h1>
+            
+            
+            
+                <p><em>基于Mysql5.7</em></p>
+<p><strong>一、基础规范</strong></p>
+<ul>
+<li>表存储引擎必须使用InnoDB，了解底层使用的B+树索引</li>
+<li>表字符集默认使用utf8，必要时候使用utf8mb4</li>
+</ul>
+<p><em>解读：</em></p>
+<p><em>（0）支持事务，行级锁，并发性能更好，CPU以及内存缓存也优化资源利用率更高</em></p>
+<p><em>（1）万国码通用，无乱码风险，汉字3字节，英文1字节</em></p>
+<p><em>（2）utf8mb4是utf8的超集，有存储4字节例如表情符号时，使用它</em></p>
+<p><em>（3）mysql -uroot -p -e create database blog default character set utf8mb4 collate utf8mb4_general_ci;</em></p>
+<ul>
+<li>数据表、数据字段必须加上中文注释</li>
+</ul>
+<ul>
+<li>禁止使用存储过程（procedure），视图（view），触发器（trigger），事件（event）</li>
+</ul>
+<p><em>解读：</em></p>
+<p><em>（1）对数据库性能影响较大，互联网业务，能让站点层和服务层干的事情，不要交到数据库层</em></p>
+<p><em>（2）解放数据库CPU，将计算转移到服务层。业务逻辑放到服务层具备更好的扩展性，轻松增加机器就加性能</em></p>
+<p><em>（3）扩展性较差，调试，排错，迁移都比较困难</em></p>
+<p><em>（4）一个存储过程的使用例子，往测试表里批量加数据</em></p>
+<div class="highlight"><pre><span></span><span class="n">mysql</span><span class="o">&gt;</span> <span class="n">delimiter</span> <span class="p">;;</span>
+<span class="n">mysql</span><span class="o">&gt;</span> <span class="k">create</span> <span class="k">procedure</span> <span class="nf">fake_data</span><span class="p">()</span>
+    <span class="o">-&gt;</span> <span class="n">begin</span>
+    <span class="o">-&gt;</span>   <span class="k">declare</span> <span class="n">i</span> <span class="kt">int</span><span class="p">;</span>
+    <span class="o">-&gt;</span>   <span class="kt">set</span> <span class="n">i</span> <span class="o">=</span> <span class="mi">1</span><span class="p">;</span>
+    <span class="o">-&gt;</span>   <span class="k">while</span><span class="p">(</span><span class="n">i</span> <span class="o">&lt;=</span> <span class="mi">1000</span><span class="p">)</span> <span class="n">do</span>
+    <span class="o">-&gt;</span>     <span class="k">insert</span> <span class="k">into</span> <span class="n">tmp_t</span> <span class="k">values</span><span class="p">(</span><span class="n">i</span><span class="p">,</span> <span class="n">i</span><span class="p">);</span>
+    <span class="o">-&gt;</span>     <span class="kt">set</span> <span class="n">i</span> <span class="o">=</span> <span class="n">i</span> <span class="o">+</span> <span class="mi">1</span><span class="p">;</span>
+    <span class="o">-&gt;</span>   <span class="n">end</span> <span class="k">while</span><span class="p">;</span>
+    <span class="o">-&gt;</span> <span class="n">end</span><span class="p">;;</span>
+<span class="n">Query</span> <span class="n">OK</span><span class="p">,</span> <span class="mi">0</span> <span class="n">rows</span> <span class="nf">affected</span> <span class="p">(</span><span class="mi">0</span><span class="p">.</span><span class="mi">00</span> <span class="n">sec</span><span class="p">)</span>
+
+<span class="n">mysql</span><span class="o">&gt;</span> <span class="n">delimiter</span> <span class="p">;</span>
+<span class="n">mysql</span><span class="o">&gt;</span> <span class="k">call</span> <span class="nf">fake_data</span><span class="p">();</span>
+<span class="n">mysql</span><span class="o">&gt;</span> <span class="k">drop</span> <span class="k">procedure</span> <span class="n">fake_data</span><span class="p">;</span>
+</pre></div>
+<ul>
+<li>禁止在数据库中存储大文件，例如照片，可以将大文件存储在对象存储系统，在数据库中存储路径</li>
+<li>禁止在线上环境做数据库的压力测试</li>
+<li>测试，开发，线上数据库环境必须相互隔离，读写权限分离，登陆使用跳板机</li>
+</ul>
+<p><strong>二、命名规范</strong></p>
+<ul>
+<li>库名，表名，列名必须用小写，然后采用下划线分隔</li>
+<li>库名，表名，列名必须见名知义，长度不要超过32字符，不要撞关键字</li>
+</ul>
+<p><em>解读：</em></p>
+<p><em>（1）无意义的命名都是给自己埋坑，表名我自己是习惯用app_table来命名</em></p>
+<p><em>（2）tmp，tables谁TM知道这些库表是干嘛的</em></p>
+<ul>
+<li>库备份必须以bak为前缀，以日期为后缀</li>
+<li>从库必须以-s为后缀，备库必须以-ss为后缀</li>
+</ul>
+<p><strong>三、表设计规范</strong></p>
+<ul>
+<li>单实例表个数必须控制在2000个以内</li>
+<li>单表分表个数必须控制在1024个以内</li>
+<li>表必须有主键，推荐使用UNSIGNED整数为主键</li>
+</ul>
+<p><em>潜在坑：删除无主键的表，如果是row模式的主从架构，从库会挂住</em></p>
+<ul>
+<li>尽量不使用外键，如果要保证完整性，应由应用程式控制，（MyISAM不支持外键）</li>
+</ul>
+<p><em>解读：</em></p>
+<p><em>（1）外键使得表之间相互耦合，影响update/delete等SQL性能，有可能造成死锁，高并发情况下容易成为数据库瓶颈</em></p>
+<p><em>（2）小项目是可以使用外键的，但对于约束还是应该尽量放在服务端去实现</em></p>
+<ul>
+<li>建议将大字段，访问频度低的字段拆分到单独的表中存储，进行分表垂直拆分，分离冷热数据</li>
+</ul>
+<p><strong>四、列设计规范</strong></p>
+<ul>
+<li>根据业务区分使用tinyint/int/bigint/无符号，分别会占用1/4/8字节</li>
+<li>根据业务区分使用char/varchar</li>
+</ul>
+<p><em>解读：</em></p>
+<p><em>（1）标志位使用无符号的tinyint，占用一个字节，无符号取值（0-255）</em></p>
+<p><em>（2）其中tinyint(1)，tinyint(4)，int(11)，数字不是指的能存储数字的长度，是当设置填充零的时候用于填充的</em></p>
+<p><em>（3）字段长度固定的话，或者长度近似的业务场景，适合使用char，能够减少碎片，查询性能高</em></p>
+<p><em>（4）字段长度相差较大，或者更新较少的业务场景，适合使用varchar，能够减少空间</em></p>
+<ul>
+<li>根据业务区分使用datetime/timestamp</li>
+</ul>
+<p><em>解读：</em></p>
+<p><em>（1）前者占用5个字节（5.6开始，以前都是8个字节），后者占用4个字节，存储年使用YEAR，存储日期使用DATE，存储时间使用datetime，个人比较喜欢将时间存储为datetime</em></p>
+<p><em>（2）支持自动更新时间字段：<a href="https://dev.mysql.com/doc/refman/8.0/en/timestamp-initialization.html">https://dev.mysql.com/doc/refman/8.0/en/timestamp-initialization.html</a></em></p>
+<ul>
+<li>必须把字段定义为NOT NULL并设默认值</li>
+</ul>
+<p><em>解读：</em></p>
+<p><em>（1）NULL的列使用索引，索引统计，值都更加复杂，MySQL更难优化</em></p>
+<p><em>（2）NULL需要更多的存储空间，增加处理复杂度</em></p>
+<p><em>（3）NULL只能采用IS NULL或者IS NOT NULL，而在=/!=/in/not in时会有坑</em></p>
+<ul>
+<li>使用INT UNSIGNED存储IPv4，不要用char(15)</li>
+<li>使用整数存储货币</li>
+<li>使用varchar(20)存储手机号，不要使用整数</li>
+</ul>
+<p><em>解读：</em></p>
+<p><em>（1）牵扯到国家代号，可能出现+/-/()等字符，例如+86</em></p>
+<p><em>（2）小数容易导致钱对不上，单位用分</em></p>
+<p><em>（3）手机号不会用来做数学运算</em></p>
+<p><em>（4）varchar可以模糊查询，例如like ‘185%’</em></p>
+<ul>
+<li>使用TINYINT来代替ENUM枚举</li>
+</ul>
+<p><em>解读：ENUM增加新值要进行DDL（Data Definition Language）操作</em></p>
+<p><strong>五、索引规范</strong></p>
+<ul>
+<li>唯一索引使用uniq_[字段名]来命名</li>
+<li>非唯一索引使用idx_[字段名]来命名</li>
+<li>单张表索引数量建议控制在5个以内</li>
+</ul>
+<p><em>解读：</em></p>
+<p><em>（1）互联网高并发业务，索引的合理建立可以提升读性能，但是太多索引会影响写性能</em></p>
+<p><em>（2）读写分离的场景下，读库可以多索引用于提升读性能，写库可以少索引用来提升写性能</em></p>
+<p><em>（3）生成执行计划时，如果索引太多，会降低性能，并可能导致MySQL选择不到最优索引</em></p>
+<p><em>（4）异常复杂的查询需求，可以选择ElasticSearch等更为适合的方式存储</em></p>
+<ul>
+<li>组合索引字段数不建议超过5个</li>
+</ul>
+<p><em>解读：如果5个字段还不能极大缩小row范围，八成是设计有问题</em></p>
+<ul>
+<li>不建议在频繁更新的字段、区分度不高的属性上建立索引</li>
+<li>非必要不要进行JOIN查询，如果要进行JOIN查询，被JOIN的字段必须类型相同，并建立索引</li>
+</ul>
+<p><em>解读：</em></p>
+<p><em>（0）更新会变更B+树，更新频分的字段建立索引会大大降低数据库的性能</em></p>
+<p><em>（1）性别这种区分度不大的属性，建立索引是没有什么意义的，不能有效过滤数据，性能跟全表类似</em></p>
+<p><em>（2）JOIN字段类型不一致，会导致全表扫描</em></p>
+<ul>
+<li>理解组合索引最左前缀原则，避免重复建设索引</li>
+<li>组合索引必须把区分度高的字段放在前面，where条件顺序不需要和组合索引一致</li>
+</ul>
+<p><em>解读：如果建立了索引(a, b, c)，相当于建立了(a), (a,b), (a,b,c)</em></p>
+<p><strong>六、SQL规范</strong></p>
+<ul>
+<li>禁止使用select *，只获取必要字段，需要显示说明列属性</li>
+</ul>
+<p><em>解读：</em></p>
+<p><em>（1）select \</em> 读取不必要的列 会增大cpu/io/内存/带宽等的开销*</p>
+<p><em>（2）指定字段能有效利用索引覆盖，避免回表</em></p>
+<p><em>（3）指定字段查询，在表结构变更时，能保证对应用程序无影响</em></p>
+<ul>
+<li>insert必须指定字段，禁止使用insert into T values(xx, xx)</li>
+</ul>
+<p><em>解读：指定字段插入，在表结构变更时，能保证对应用程序无影响</em></p>
+<ul>
+<li>隐式类型转换会使索引失效，导致全表扫描</li>
+<li>禁止在where条件列使用函数或者表达式</li>
+</ul>
+<p><em>解读：</em></p>
+<p><em>（1）类型转换其实本质是使用到了函数，导致不能命中索引，全表扫描，函数破坏了索引的有序性</em></p>
+<p><em>（2）select uid from user where from_unixtime(day) &gt;= '2019-10-01' 会导致全表扫描</em></p>
+<p><em>（3）正确的写法：select uid from user where day &gt;= unix_timestamp('2019-10-01 00:00:00')</em></p>
+<ul>
+<li>禁止负向查询以及%开头的模糊查询</li>
+</ul>
+<p><em>解读：</em></p>
+<p><em>（0） select \</em> from user where status !=0 and status !=1 可以优化为 where status in(2,3)*</p>
+<p><em>（1）负向查询条件：not、not in、!=、&lt;&gt;、!&gt;、!&lt;、not like会导致全表扫描</em></p>
+<p><em>（2）前导模糊查询不能使用索引，会全表扫描</em></p>
+<ul>
+<li>禁止大表JOIN和子查询</li>
+<li>同一个字段上的OR必须改写为IN，IN的值必须少于50个</li>
+<li>应用程序必须捕获SQL异常，Mysql开启慢查询，方便日后定位问题</li>
+</ul>
+<p><em>解读：</em></p>
+<p><em>or和in本质上是一样处理，在in列表中查询的时候，会排序采用二分查找O(logn)，而每次的or都是O(n)</em></p>
+<p><em><a href="https://dev.mysql.com/doc/refman/8.0/en/comparison-operators.html#function_in">https://dev.mysql.com/doc/refman/8.0/en/comparison-operators.html#function_in</a></em></p>
+<p><strong>七、其他SQL实践</strong></p>
+<ul>
+<li>如果业务大部分是单条查询，使用Hash索引性能更好，例如用户中心</li>
+<li>select * from user where uid=?</li>
+<li>select * from user where login_name=?</li>
+</ul>
+<p><em>解读：B+树索引时间复杂度为O(logn)，Hash索引时间复杂度为O(1)。不过Innodb并不支持hash索引</em></p>
+<ul>
+<li>如果明确知道只有一条结果返回，limit 1 能够提高效率</li>
+<li>select * from user where username=?</li>
+<li>可以优化为： select * from user where username=? limit 1</li>
+</ul>
+<p><em>解读：我们知道只有一条数据，db并不知道，明确告诉它，让它主动停止游标移动</em></p>
+<ul>
+<li>关于MyISAM和InnoDB的count(*)操作</li>
+</ul>
+<p><em>解读：</em></p>
+<p><em>（1）MyISAM会直接存储总行数，而InnoDB需要按行扫描，对于后者不要轻易使用，性能消耗大</em></p>
+<p><em>（2）只有扫描全表的总行数，MyISAM才会直接返回结果，如果有条件查询，两种的处理方式类似</em></p>
+<p>课外阅读：58沈剑（架构师之路），参考有修改</p>
+
+            
+            
+            
+
+        </section>
+
+        <aside id="sidebar">
+            <blockquote class="route">关于我</blockquote>
+            <p>19本科毕业生，代码的搬运工，此界面灵感来自公众号【运维咖啡吧】</p>
+            
+            <blockquote class="route">Github地址</blockquote>
+            <a href="https://github.com/enjoy-binbin">
+                <img border="0" src="https://avatars2.githubusercontent.com/u/22811481" width="100%" height="100%" alt="enjoy-binbin"/>
+            </a>
+            
+            
+        </aside>
+    </div>
+</div>
+</body>
+
+</html>

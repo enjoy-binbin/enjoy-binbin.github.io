@@ -1,0 +1,94 @@
+
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta name="theme-color" content="#2879d0"/>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1"/>
+    <meta name="copyright" content="©2020 测试所有"/>
+    <link rel="stylesheet" href="/css/style.min.css" media="screen" type="text/css"/>
+
+    <!-- Begin SEO tag -->
+    <title>源码编译nginx并增加模块</title>
+    <meta property="og:locale" content="zh_CN"/>
+    <meta property="og:type" content="article"/>
+    <meta property="og:title" content="源码编译nginx并增加模块"/>
+    <meta property="og:description" content="源码编译nginx并增加模块"/>
+    <meta property="og:url" content="#"/>
+    <meta property="og:site_name" content="源码编译nginx并增加模块"/>
+    <meta name="description" content="源码编译nginx并增加模块"/>
+    <!-- End SEO tag -->
+</head>
+
+<body>
+<header>
+    <div class="inner">
+        <a href="/">
+            <h1>彬彬同学丶</h1>
+        </a>
+        <h2>Choose what you love,love what you choose.</h2>
+    </div>
+</header>
+
+<div id="content-wrapper">
+    <div class="inner clearfix">
+        <section id="main-content">
+        
+            
+                <h1 id="art-title">源码编译nginx并增加模块</h1>
+            
+            
+            
+                <p><h3 id="1配置yum源">1、在Centos7下安装nginx<br/> </h3><pre class="brush:bash;toolbar:false">#&nbsp;第一步当然是&nbsp;下载源码包，如果没有wget可以&nbsp;直接&nbsp;yum&nbsp;install&nbsp;wget
+&nbsp;&nbsp;&nbsp;&nbsp;wget&nbsp;<a href="http://nginx.org/download/nginx-1.12.2.tar.gz">http://nginx.org/download/nginx-1.12.2.tar.gz</a>
+&nbsp;&nbsp;&nbsp;</p>
+<h1>&nbsp;考虑到网速问题，如果下载过慢也可以在win上下载后移动到linux上</h1>
+<h1>&nbsp;个人使用的终端工具为:&nbsp;SecureCRT</h1>
+<h1>&nbsp;可以在&nbsp;SecureCRT已连接的终端&nbsp;面板上右键&nbsp;连接SFTP标签页</h1>
+<h1>&nbsp;SFTP命令的话可以自行百度了</h1>
+<p>&nbsp;&nbsp;&nbsp;&nbsp;pwd,&nbsp;lpwd,&nbsp;ls,&nbsp;lls,&nbsp;cd,&nbsp;lcd,&nbsp;put,&nbsp;get
+&nbsp;&nbsp;&nbsp;&nbsp;lcd&nbsp;f:/
+&nbsp;&nbsp;&nbsp;&nbsp;put&nbsp;xxx.tar.gz&lt;/pre&gt;<p><img src="/media/article/ueditor/图片_20180914215921_280.png" title="" alt="图片.png" style="width: 733px; height: 309px;" width="733" height="309"/> </p><h3 id="1配置yum源"><br/></h3><h3 id="1配置yum源">2、源码编译nginx<br/> </h3><pre class="brush:bash;toolbar:false">#&nbsp;依赖问题&nbsp;emmm&nbsp;安装时看哪个报错就安装哪个吧
+&nbsp;&nbsp;&nbsp;&nbsp;yum&nbsp;-y&nbsp;install&nbsp;gcc&nbsp;gcc-c++&nbsp;openssl-devel&nbsp;pcre-devel&nbsp;httpd-tools
+&nbsp;&nbsp;&nbsp;</p>
+<h1>&nbsp;解压，安装，因为是自己实验，with模块就没怎么装了，后面还会演示如何添加模块编译</h1>
+<p>&nbsp;&nbsp;&nbsp;&nbsp;tar&nbsp;-zxf&nbsp;nginx-1.12.2.tar.gz
+&nbsp;&nbsp;&nbsp;&nbsp;cd&nbsp;nginx-1.12.2
+&nbsp;&nbsp;&nbsp;&nbsp;useradd&nbsp;nginx
+&nbsp;&nbsp;&nbsp;&nbsp;./configure&nbsp;--prefix=/usr/local/nginx&nbsp;--user=nginx&nbsp;--group=nginx&nbsp;--with-http_ssl_module&nbsp;
+&nbsp;&nbsp;&nbsp;&nbsp;make&nbsp;&amp;&amp;&nbsp;make&nbsp;install
+&nbsp;&nbsp;&nbsp;</p>
+<h1>&nbsp;创建软连接</h1>
+<p>&nbsp;&nbsp;&nbsp;&nbsp;ln&nbsp;-s&nbsp;/usr/local/nginx/sbin/nginx&nbsp;/usr/sbin/nginx&lt;/pre&gt;<p><br/> </p><h3 id="1配置yum源">3、已编译好的nginx增加模块</h3><pre class="brush:bash;toolbar:false">#&nbsp;查看nginx在编译时安装了哪些模块
+&nbsp;&nbsp;&nbsp;&nbsp;nginx&nbsp;-V</pre><p><img src="/media/article/ueditor/图片_20180914221051_602.png" title="" alt="图片.png"/> </p><p><br/> </p><pre class="brush:bash;toolbar:false">#&nbsp;添加新模块时需要重新在&nbsp;nginx-1.12.2里&nbsp;configure，要记得加上之前的配置和模块
+&nbsp;&nbsp;&nbsp;&nbsp;cd&nbsp;nginx-1.12.2
+&nbsp;&nbsp;&nbsp;&nbsp;./configure&nbsp;--prefix=/usr/local/nginx&nbsp;--user=nginx&nbsp;--group=nginx&nbsp;--with-http_ssl_module&nbsp;--with-http_mp4_module
+&nbsp;&nbsp;&nbsp;&nbsp;make
+&nbsp;&nbsp;&nbsp;&nbsp;</p>
+<h1>&nbsp;这里切记只&nbsp;make&nbsp;而不进行&nbsp;make&nbsp;install，不然就真的覆盖了</h1>
+<h1>&nbsp;cd&nbsp;进&nbsp;nginx-1.12.2/objs里，对新编译的好的&nbsp;nginx二进制文件进行复制</h1>
+<p>&nbsp;&nbsp;&nbsp;&nbsp;cd&nbsp;objs
+&nbsp;&nbsp;&nbsp;&nbsp;cp&nbsp;nginx&nbsp;/usr/sbin/nginx&lt;/pre&gt;<p><img src="/media/article/ueditor/图片_20180914221718_749.png" title="" alt="图片.png"/> </p><p><br/> </p><h3 id="1配置yum源">4、之后启动nginx，使用nginx -V 查看，第三方模块可以自己百度，或者日后补充。</h3><div><h3 id="1配置yum源"><img src="http://127.0.0.1:8000/media/article/ueditor/图片_20180914222148_567.png" title="" alt="图片.png"/></h3></div></p>
+
+            
+            
+            
+
+        </section>
+
+        <aside id="sidebar">
+            <blockquote class="route">关于我</blockquote>
+            <p>19本科毕业生，代码的搬运工，此界面灵感来自公众号【运维咖啡吧】</p>
+            
+            <blockquote class="route">Github地址</blockquote>
+            <a href="https://github.com/enjoy-binbin">
+                <img border="0" src="https://avatars2.githubusercontent.com/u/22811481" width="100%" height="100%" alt="enjoy-binbin"/>
+            </a>
+            
+            
+        </aside>
+    </div>
+</div>
+</body>
+
+</html>

@@ -1,0 +1,107 @@
+
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta name="theme-color" content="#2879d0"/>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1"/>
+    <meta name="copyright" content="©2020 测试所有"/>
+    <link rel="stylesheet" href="/css/style.min.css" media="screen" type="text/css"/>
+
+    <!-- Begin SEO tag -->
+    <title>文章按日期归档</title>
+    <meta property="og:locale" content="zh_CN"/>
+    <meta property="og:type" content="article"/>
+    <meta property="og:title" content="文章按日期归档"/>
+    <meta property="og:description" content="文章按日期归档"/>
+    <meta property="og:url" content="#"/>
+    <meta property="og:site_name" content="文章按日期归档"/>
+    <meta name="description" content="文章按日期归档"/>
+    <!-- End SEO tag -->
+</head>
+
+<body>
+<header>
+    <div class="inner">
+        <a href="/">
+            <h1>彬彬同学丶</h1>
+        </a>
+        <h2>Choose what you love,love what you choose.</h2>
+    </div>
+</header>
+
+<div id="content-wrapper">
+    <div class="inner clearfix">
+        <section id="main-content">
+        
+            
+                <h1 id="art-title">文章按日期归档</h1>
+            
+            
+            
+                <h3>博客文章按日期归档</h3>
+<p>基本用法为 <code>{% regroup 类列表对象 by 列表中元素的某个属性 as 模板变量 %}</code></p>
+<p>下例中根据 <code>aritlce_list</code>列表中元素的 <code>add_time.year</code>  属性  <code>regroup</code>  了 <code>cities</code>，并通过 as 将分组后的结果保存到了 <code>country_list</code> 模板变量中。</p>
+<p>然后可以循环这个分组后的列表。被循环的元素包含两个属性：</p>
+<ul>
+<li><code>grouper</code>，就是分组依据的属性值，例如下面中的 19年 18年</li>
+<li><code>list</code>，属于该组下原列表中元素</li>
+</ul>
+<div class="highlight"><pre><span></span><span class="c1"># model</span>
+<span class="kn">from</span> <span class="nn">django.db</span> <span class="kn">import</span> <span class="n">models</span>
+    <span class="k">class</span> <span class="nc">Article</span><span class="p">(</span><span class="n">models</span><span class="o">.</span><span class="n">Model</span><span class="p">):</span>
+        <span class="n">title</span> <span class="o">=</span> <span class="n">models</span><span class="o">.</span><span class="n">CharField</span><span class="p">(</span><span class="n">max_length</span><span class="o">=</span><span class="mi">100</span><span class="p">)</span>
+        <span class="n">add_time</span> <span class="o">=</span> <span class="n">models</span><span class="o">.</span><span class="n">DatetimeField</span><span class="p">()</span>
+
+<span class="c1"># view，这里如果不用通用视图，只需要view里能返回一个有序的article_list即可</span>
+<span class="k">class</span> <span class="nc">ArchivesView</span><span class="p">(</span><span class="n">ListView</span><span class="p">):</span>
+    <span class="n">template_name</span> <span class="o">=</span> <span class="s1">&#39;blog/archives.html&#39;</span>  <span class="c1"># 渲染的模板</span>
+    <span class="n">context_object_name</span> <span class="o">=</span> <span class="s1">&#39;article_list&#39;</span>  <span class="c1"># 模板中上下文调用的对象名称</span>
+    <span class="n">queryset</span> <span class="o">=</span> <span class="n">Article</span><span class="o">.</span><span class="n">objects</span><span class="o">.</span><span class="n">all</span><span class="p">()</span><span class="o">.</span><span class="n">order_by</span><span class="p">(</span><span class="s1">&#39;-add_time&#39;</span><span class="p">)</span>  <span class="c1"># 这里需要排好序</span>
+
+<span class="c1"># template </span>
+<span class="p">{</span><span class="o">%</span> <span class="n">regroup</span> <span class="n">article_list</span> <span class="n">by</span> <span class="n">add_time</span><span class="o">.</span><span class="n">year</span> <span class="k">as</span> <span class="n">year_list</span> <span class="o">%</span><span class="p">}</span>
+<span class="o">&lt;</span><span class="n">ul</span><span class="o">&gt;</span>
+    <span class="p">{</span><span class="o">%</span> <span class="k">for</span> <span class="n">year</span> <span class="ow">in</span> <span class="n">year_list</span> <span class="o">%</span><span class="p">}</span>
+        <span class="o">&lt;</span><span class="n">li</span><span class="o">&gt;</span><span class="p">{{</span> <span class="n">year</span><span class="o">.</span><span class="n">grouper</span> <span class="p">}}</span> <span class="err">年</span>
+            <span class="p">{</span><span class="o">%</span> <span class="n">regroup</span> <span class="n">year</span><span class="o">.</span><span class="n">list</span> <span class="n">by</span> <span class="n">add_time</span><span class="o">.</span><span class="n">month</span> <span class="k">as</span> <span class="n">month_list</span> <span class="o">%</span><span class="p">}</span>
+            <span class="o">&lt;</span><span class="n">ul</span><span class="o">&gt;</span>
+                <span class="p">{</span><span class="o">%</span> <span class="k">for</span> <span class="n">month</span> <span class="ow">in</span> <span class="n">month_list</span> <span class="o">%</span><span class="p">}</span>
+                    <span class="o">&lt;</span><span class="n">li</span><span class="o">&gt;</span><span class="p">{{</span> <span class="n">month</span><span class="o">.</span><span class="n">grouper</span> <span class="p">}}</span> <span class="err">月</span>
+                        <span class="o">&lt;</span><span class="n">ul</span><span class="o">&gt;</span>
+                            <span class="p">{</span><span class="o">%</span> <span class="k">for</span> <span class="n">article</span> <span class="ow">in</span> <span class="n">month</span><span class="o">.</span><span class="n">list</span> <span class="o">%</span><span class="p">}</span>
+                                <span class="o">&lt;</span><span class="n">li</span><span class="o">&gt;&lt;</span><span class="n">a</span> <span class="n">href</span><span class="o">=</span><span class="s2">&quot;{{ article.get_absolute_url }}&quot;</span><span class="o">&gt;</span><span class="p">{{</span> <span class="n">article</span><span class="o">.</span><span class="n">title</span> <span class="p">}}</span><span class="o">&lt;/</span><span class="n">a</span><span class="o">&gt;&lt;/</span><span class="n">li</span><span class="o">&gt;</span>
+                            <span class="p">{</span><span class="o">%</span> <span class="n">endfor</span> <span class="o">%</span><span class="p">}</span>
+                        <span class="o">&lt;/</span><span class="n">ul</span><span class="o">&gt;</span>
+                    <span class="o">&lt;/</span><span class="n">li</span><span class="o">&gt;</span>
+                <span class="p">{</span><span class="o">%</span> <span class="n">endfor</span> <span class="o">%</span><span class="p">}</span>
+            <span class="o">&lt;/</span><span class="n">ul</span><span class="o">&gt;</span>
+        <span class="o">&lt;/</span><span class="n">li</span><span class="o">&gt;</span>
+    <span class="p">{</span><span class="o">%</span> <span class="n">endfor</span> <span class="o">%</span><span class="p">}</span>
+<span class="o">&lt;/</span><span class="n">ul</span><span class="o">&gt;</span>
+</pre></div>
+<h2>总结</h2>
+<p><code>regroup</code> 模板标签对于需要层级分组显示的对象十分有用。但有一点需要注意，<strong>被分组的对象一定要是已经有序排列的</strong>，否则 <code>regroup</code> 无法正确地分组。相信从以上两个示例中你可以很容易地总结出 <code>regroup</code> 模板标签的用法，从而用于自己的特定需求中，例如像知乎一样对用户每天的通知进行分组显示。</p>
+
+            
+            
+            
+
+        </section>
+
+        <aside id="sidebar">
+            <blockquote class="route">关于我</blockquote>
+            <p>19本科毕业生，代码的搬运工，此界面灵感来自公众号【运维咖啡吧】</p>
+            
+            <blockquote class="route">Github地址</blockquote>
+            <a href="https://github.com/enjoy-binbin">
+                <img border="0" src="https://avatars2.githubusercontent.com/u/22811481" width="100%" height="100%" alt="enjoy-binbin"/>
+            </a>
+            
+            
+        </aside>
+    </div>
+</div>
+</body>
+
+</html>

@@ -1,0 +1,140 @@
+
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta name="theme-color" content="#2879d0"/>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1"/>
+    <meta name="copyright" content="©2020 测试所有"/>
+    <link rel="stylesheet" href="/css/style.min.css" media="screen" type="text/css"/>
+
+    <!-- Begin SEO tag -->
+    <title>MyISAM和InnoDB索引差异</title>
+    <meta property="og:locale" content="zh_CN"/>
+    <meta property="og:type" content="article"/>
+    <meta property="og:title" content="MyISAM和InnoDB索引差异"/>
+    <meta property="og:description" content="MyISAM和InnoDB索引差异"/>
+    <meta property="og:url" content="#"/>
+    <meta property="og:site_name" content="MyISAM和InnoDB索引差异"/>
+    <meta name="description" content="MyISAM和InnoDB索引差异"/>
+    <!-- End SEO tag -->
+</head>
+
+<body>
+<header>
+    <div class="inner">
+        <a href="/">
+            <h1>彬彬同学丶</h1>
+        </a>
+        <h2>Choose what you love,love what you choose.</h2>
+    </div>
+</header>
+
+<div id="content-wrapper">
+    <div class="inner clearfix">
+        <section id="main-content">
+        
+            
+                <h1 id="art-title">MyISAM和InnoDB索引差异</h1>
+            
+            
+            
+                <p>数据库索引到底是啥中介绍到了B+树，这是一种很适合用来做数据库索引的数据结构。</p>
+<p>(1)很适合磁盘存储，能够充分利用局部性原理，磁盘预读；</p>
+<p>(2)很低的树高度，能够存储大量数据；</p>
+<p>(3)索引本身占用的内存很小；</p>
+<p>(4)能够很好的支持单点查询，范围查询，有序性查询；</p>
+<p>数据库的索引分为<strong>主键索引</strong>（Primary Inkex）与<strong>普通索引</strong>（Secondary Index）。InnoDB和MyISAM是怎么利用B+树来实现这两类索引，其又有什么差异呢？</p>
+<p><strong>一、InnoDB的索引</strong></p>
+<p>作为目前最流行的engine，在InnoDB中，表都是根据主键顺序以索引的形式存放的，这种存储方式的表称为索引组织表。又因为前面我们提到的，InnoDB使用了B+树索引模型，所以数据都是存储在B+树中的。</p>
+<p>每一个索引在InnoDB里面对应一棵B+树。</p>
+<p>InnoDB中的主键索引只能有一个（不过可以多个字段进行组合主键）</p>
+<p>主键索引的叶子节点存的是整行数据。在InnoDB里，主键索引也被称为聚簇(聚集)索引（clustered index）。</p>
+<p>非主键索引的叶子节点内容是主键的值。在InnoDB里，非主键索引也被称为二级(非聚集)索引（secondary index）。</p>
+<ul>
+<li>没有单独区域存储行记录（count * 需要查询全表）</li>
+<li>主键索引的叶子节点，存储主键，与对应行记录数据（而不是指针，MyISAM中存的是记录指针）</li>
+</ul>
+<p><em>画外音：因此，InnoDB的PK主键查询是非常快的。</em></p>
+<p>InnoDB的<strong>普通索引</strong>可以有多个，它与聚集索引是不同的：</p>
+<ul>
+<li>普通索引的叶子节点，只存储着主键（也不是指针）</li>
+<li>查询普通索引树，得到主键，再回主键索引树搜索一次，拿到数据，这个过程叫做<strong>回表</strong></li>
+<li>查询普通索引树，如果查询主键和它（索引字段），查询数据已经在普通树上，不需要回表，称为<strong>覆盖索引</strong></li>
+<li>最左前缀原则，(a,b,c)联合索引相当于 (a)，(a,b), (a,b,c) 三个索引</li>
+<li>索引下推（5.6开始），在索引遍历过程中，对索引中包含的字段先做判断，直接过滤掉不满足条件的记录，减少回表次数。</li>
+</ul>
+<p>因为这个特性，InnoDB的表必须要有聚集索引：</p>
+<p>(1)如果表定义了PK，则PK就是聚集索引；</p>
+<p>(2)如果表没有定义PK，则第一个非空unique列是聚集索引；</p>
+<p>(3)否则，InnoDB会创建一个隐藏的row-id作为聚集索引；</p>
+<p>聚集索引，也只能够有一个，因为数据行在物理磁盘上只能有一份聚集存储。</p>
+<p>B+树为了维护索引有序性，在插入新值的时候需要做必要的维护</p>
+<p>对于InnoDB表，这里的启示是：</p>
+<p>(1)不建议使用较长的列做主键，例如char(64)，因为所有的普通索引都会存储主键，会导致普通索引树过于庞大。主键越小，普通索引的叶子节点就越小，普通索引树所占用的空间就越小；</p>
+<p>(2)建议使用趋势递增的key做主键，由于数据行与索引一体，这样不至于插入记录时，有大量索引分裂（页分裂），行记录移动，减少索引维护带来的开销；</p>
+<p>B+树例子，InnoDB  表结构：t(id PK主键, name KEY普通索引, sex, flag);</p>
+<p>表中有四条记录，两颗B+树如下：</p>
+<p>1, shenjian, m, A               3, zhangsan, m, A</p>
+<p>5, lisi, m, A                         9, wangwu, f, B</p>
+<p><img src="/media/editor/MyISAM和InnoDB索引差异-1.jpg" alt="img"></p>
+<ul>
+<li>主键索引树上，id为PK主键，行记录和id索引树存储在一起的，叶子节点中存储着所有的行记录数据</li>
+<li>name为KEY普通索引，有一棵name的索引树，叶子存储着主键id值，需要根据主键回主键树查找数据</li>
+</ul>
+<p>当：select * from t where name=‘lisi’;</p>
+<p><img src="/media/editor/MyISAM和InnoDB索引差异-2.jpg" alt="img"></p>
+<p>会先通过name辅助索引定位到B+树的叶子节点得到id=5，再通过聚集索引定位到行记录。</p>
+<p><em>画外音：所以，其实扫了2遍索引树。</em></p>
+<p><strong>二、MyISAM的索引</strong></p>
+<p>MyISAM的索引与行记录是分开存储的，叫做<strong>非聚集索引</strong>（UnClustered Index）。</p>
+<p>其主键索引与普通索引没有本质差异：</p>
+<ul>
+<li>有连续聚集的区域单独存储行记录</li>
+<li>主键索引的叶子节点，存储主键，与对应行记录的指针</li>
+<li>普通索引的叶子结点，存储索引列，与对应行记录的指针</li>
+</ul>
+<p><em>画外音：MyISAM的表可以没有主键。</em></p>
+<p>主键索引与普通索引是两棵独立的索引B+树，在查询的时候，都是先通过索引列查找，先定位到B+树的叶子节点，再通过数据指针定位到最后的行记录数据。</p>
+<p>B+树例子，MyISAM 表结构：t(id PK, name KEY, sex, flag);</p>
+<p>表中有四条记录：</p>
+<p>1, shenjian, m, A       3, zhangsan, m, A</p>
+<p>5, lisi, m, A                   9, wangwu, f, B</p>
+<p><img src="/media/editor/MyISAM和InnoDB索引差异-3.jpg" alt="img"></p>
+<p>其B+树索引构造如上图：</p>
+<ul>
+<li>行记录单独存储在别的地方，索引树叶子节点存储指向数据的指针</li>
+<li>id为PK，有一棵id的索引树，叶子指向行记录</li>
+<li>name为KEY，有一棵name的索引树，叶子也指向行记录</li>
+</ul>
+<p><strong>三，总结</strong></p>
+<p>MyISAM和InnoDB都使用B+树来实现索引的：</p>
+<ul>
+<li>MyISAM的索引与数据分开存储，索引树叶子节点存储着指向数据的指针，主键索引与普通索引无太大区别</li>
+<li>InnoDB的<strong>聚集索引</strong>和数据行统一存储，主键树上叶子节点存储的是行记录数据，普通索引树存储的则是主键</li>
+<li>InnoDB一定有且只有一个聚集索引，建议使用趋势递增整数作为PK，而不宜使用较长的列作为PK</li>
+</ul>
+<p>课外阅读：58沈剑（架构师之路），丁奇（林晓斌）MySQL45讲</p>
+
+            
+            
+            
+
+        </section>
+
+        <aside id="sidebar">
+            <blockquote class="route">关于我</blockquote>
+            <p>19本科毕业生，代码的搬运工，此界面灵感来自公众号【运维咖啡吧】</p>
+            
+            <blockquote class="route">Github地址</blockquote>
+            <a href="https://github.com/enjoy-binbin">
+                <img border="0" src="https://avatars2.githubusercontent.com/u/22811481" width="100%" height="100%" alt="enjoy-binbin"/>
+            </a>
+            
+            
+        </aside>
+    </div>
+</div>
+</body>
+
+</html>

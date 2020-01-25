@@ -1,0 +1,153 @@
+
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta name="theme-color" content="#2879d0"/>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1"/>
+    <meta name="copyright" content="©2020 测试所有"/>
+    <link rel="stylesheet" href="/css/style.min.css" media="screen" type="text/css"/>
+
+    <!-- Begin SEO tag -->
+    <title>Django中的ContentType模型</title>
+    <meta property="og:locale" content="zh_CN"/>
+    <meta property="og:type" content="article"/>
+    <meta property="og:title" content="Django中的ContentType模型"/>
+    <meta property="og:description" content="Django中的ContentType模型"/>
+    <meta property="og:url" content="#"/>
+    <meta property="og:site_name" content="Django中的ContentType模型"/>
+    <meta name="description" content="Django中的ContentType模型"/>
+    <!-- End SEO tag -->
+</head>
+
+<body>
+<header>
+    <div class="inner">
+        <a href="/">
+            <h1>彬彬同学丶</h1>
+        </a>
+        <h2>Choose what you love,love what you choose.</h2>
+    </div>
+</header>
+
+<div id="content-wrapper">
+    <div class="inner clearfix">
+        <section id="main-content">
+        
+            
+                <h1 id="art-title">Django中的ContentType模型</h1>
+            
+            
+            
+                <h3>Django中的ContentType模型</h3>
+<p>文档地址：<a href="https://docs.djangoproject.com/en/2.1/ref/contrib/contenttypes/">https://docs.djangoproject.com/en/2.1/ref/contrib/contenttypes/</a></p>
+<p>参考文章：</p>
+<p><a href="https://www.cnblogs.com/lddhbu/archive/2012/07/18/2597755.html">https://www.cnblogs.com/lddhbu/archive/2012/07/18/2597755.html</a></p>
+<p><a href="https://www.cnblogs.com/c491873412/p/7892585.html">https://www.cnblogs.com/c491873412/p/7892585.html</a></p>
+<p>django中对contenttype的应用</p>
+<p>首先在instaled_apps中可以看到 <code>'django.contrib.contenttypes',</code></p>
+<p>数据库表中也有<code>django_content_type</code>这张表，表结构数据大致如下，存储着app_label和model的关系</p>
+<table>
+<thead><tr>
+<th>id</th>
+<th>app_label</th>
+<th>model</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>1</td>
+<td>blog</td>
+<td>article</td>
+</tr>
+<tr>
+<td>2</td>
+<td>blog</td>
+<td>movie</td>
+</tr>
+<tr>
+<td>3</td>
+<td>blog</td>
+<td>comment</td>
+</tr>
+</tbody>
+</table>
+<p>下面代码使用场景：</p>
+<p>有 文章，电影等模型类， 有一个 评论类，给文章 or 电影 or 其他以后出现的（音乐、游戏）的评论</p>
+<p>当评论表，要增加列比如 文章、电影表的外键字段 article_id，movie_id建立外键关系时，就可以使用</p>
+<div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">django.db</span> <span class="kn">import</span> <span class="n">models</span>
+<span class="kn">from</span> <span class="nn">django.contrib.contenttypes.models</span> <span class="kn">import</span> <span class="n">ContentType</span>
+<span class="kn">from</span> <span class="nn">django.contrib.contenttypes.fields</span> <span class="kn">import</span> <span class="n">GenericForeignKey</span><span class="p">,</span> <span class="n">GenericRelation</span>
+
+<span class="k">class</span> <span class="nc">Movie</span><span class="p">(</span><span class="n">models</span><span class="o">.</span><span class="n">Model</span><span class="p">):</span>
+   <span class="n">title</span> <span class="o">=</span> <span class="n">models</span><span class="o">.</span><span class="n">CharField</span><span class="p">(</span><span class="n">max_length</span><span class="o">=</span><span class="mi">100</span><span class="p">)</span>
+   <span class="n">comment</span> <span class="o">=</span> <span class="n">GenericRelation</span><span class="p">(</span><span class="s1">&#39;Comment&#39;</span><span class="p">)</span>  <span class="c1"># GenericRelation不会生成额外的列</span>
+
+<span class="k">class</span> <span class="nc">Article</span><span class="p">(</span><span class="n">models</span><span class="o">.</span><span class="n">Model</span><span class="p">):</span>
+   <span class="n">title</span> <span class="o">=</span> <span class="n">models</span><span class="o">.</span><span class="n">CharField</span><span class="p">(</span><span class="n">max_length</span><span class="o">=</span><span class="mi">100</span><span class="p">)</span>
+   <span class="n">comment</span> <span class="o">=</span> <span class="n">GenericRelation</span><span class="p">(</span><span class="s1">&#39;Comment&#39;</span><span class="p">)</span>
+
+<span class="k">class</span> <span class="nc">Comment</span><span class="p">(</span><span class="n">models</span><span class="o">.</span><span class="n">Model</span><span class="p">):</span>
+   <span class="n">content_type</span> <span class="o">=</span> <span class="n">models</span><span class="o">.</span><span class="n">ForeignKey</span><span class="p">(</span><span class="n">ContentType</span><span class="p">,</span> <span class="n">on_delete</span><span class="o">=</span><span class="n">models</span><span class="o">.</span><span class="n">CASCADE</span><span class="p">)</span>  <span class="c1"># 外键</span>
+   <span class="n">object_id</span> <span class="o">=</span> <span class="n">models</span><span class="o">.</span><span class="n">IntegerField</span><span class="p">()</span>  <span class="c1"># 对应的那个对象的id</span>
+   <span class="n">content_object</span> <span class="o">=</span> <span class="n">GenericForeignKey</span><span class="p">()</span>  <span class="c1"># 对应的那个对象，不会生成额外的列</span>
+   <span class="n">title</span> <span class="o">=</span> <span class="n">models</span><span class="o">.</span><span class="n">CharField</span><span class="p">(</span><span class="n">max_length</span><span class="o">=</span><span class="mi">100</span><span class="p">)</span>
+</pre></div>
+<p>先看Comment。Comment中使用 <code>GenericForeignKey()</code> 来指向其它的Model实例。为了使用它，你还需要在Model中定义  <code>content_type</code> 和 <code>object_id</code> 才可以。其中content_type是指向<code>ContentType</code>这个Model。</p>
+<p>在Django中，你如何定位一条记录？一般需要三个值：<code>app_label</code> ,  <code>model</code> 和  <code>object_id</code>。</p>
+<p>在<code>django_content_type</code>表中就是保存了<code>app_label</code>和<code>model</code>的关系。因此使用<code>GenericForeignKey</code>你就只要两个值了。但<code>content_object</code>本身还是要定义一下的，不会生成<code>content_object</code>c这个列。默认情况下是GenericForeignKey("content_type","object_id")，你也可以自定义那些字段的名称，但是还是默认最好，</p>
+<p>结果还是三项。使用其实还是挺简单的。看文档就ok。</p>
+<p>创建上面的模型后，进入django shell进行操作，体验一下。</p>
+<div class="highlight"><pre><span></span>python manage.py makemigrations
+python manage.py migrate
+python manage.py shell
+
+&gt;&gt;&gt; from content.models import *
+&gt;&gt;&gt; <span class="nv">article</span> <span class="o">=</span> Article<span class="o">(</span><span class="nv">title</span><span class="o">=</span><span class="s1">&#39;i am a article&#39;</span><span class="o">)</span>
+&gt;&gt;&gt; article.save<span class="o">()</span>
+&gt;&gt;&gt; article.id  <span class="c1"># 在文章表内的的文章id</span>
+<span class="m">6</span>
+&gt;&gt;&gt;
+&gt;&gt;&gt; <span class="nv">movie</span> <span class="o">=</span> Movie<span class="o">(</span><span class="nv">title</span><span class="o">=</span><span class="s1">&#39;i am a movie&#39;</span><span class="o">)</span>  <span class="c1"># movie同样可以和执行和article相同的操作</span>
+&gt;&gt;&gt; movie.save<span class="o">()</span>
+&gt;&gt;&gt;
+&gt;&gt;&gt; <span class="nv">article_comment</span> <span class="o">=</span> Comment<span class="o">()</span>
+&gt;&gt;&gt; article_comment.content_object <span class="o">=</span> article  <span class="c1"># 这里只需指定 content_object</span>
+&gt;&gt;&gt; article_comment.title <span class="o">=</span> <span class="s1">&#39;this article is really nice&#39;</span>
+&gt;&gt;&gt; article_comment.save<span class="o">()</span>
+
+&gt;&gt;&gt; article_comment.title
+&gt;&gt;&gt; <span class="s1">&#39;this article is really nice&#39;</span>
+&gt;&gt;&gt; article_comment.content_type
+&gt;&gt;&gt; &lt;ContentType: article&gt;
+&gt;&gt;&gt; article_comment.content_object
+&gt;&gt;&gt; &lt;Article: Article object <span class="o">(</span><span class="m">6</span><span class="o">)</span>&gt;
+&gt;&gt;&gt; article_comment.object_id  <span class="c1"># </span>
+&gt;&gt;&gt; <span class="m">6</span>
+
+&gt;&gt;&gt; article.comment.all<span class="o">()</span>  <span class="c1"># 可以根据GenericRelation这样取得所有的comments</span>
+&lt;QuerySet <span class="o">[</span>&lt;Comment: Comment object <span class="o">(</span><span class="m">6</span><span class="o">)</span>&gt;<span class="o">]</span>&gt;
+</pre></div>
+
+            
+            
+            
+
+        </section>
+
+        <aside id="sidebar">
+            <blockquote class="route">关于我</blockquote>
+            <p>19本科毕业生，代码的搬运工，此界面灵感来自公众号【运维咖啡吧】</p>
+            
+            <blockquote class="route">Github地址</blockquote>
+            <a href="https://github.com/enjoy-binbin">
+                <img border="0" src="https://avatars2.githubusercontent.com/u/22811481" width="100%" height="100%" alt="enjoy-binbin"/>
+            </a>
+            
+            
+        </aside>
+    </div>
+</div>
+</body>
+
+</html>

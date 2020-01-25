@@ -1,0 +1,237 @@
+
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta name="theme-color" content="#2879d0"/>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1"/>
+    <meta name="copyright" content="©2020 测试所有"/>
+    <link rel="stylesheet" href="/css/style.min.css" media="screen" type="text/css"/>
+
+    <!-- Begin SEO tag -->
+    <title>Python扫盲-slots</title>
+    <meta property="og:locale" content="zh_CN"/>
+    <meta property="og:type" content="article"/>
+    <meta property="og:title" content="Python扫盲-slots"/>
+    <meta property="og:description" content="Python扫盲-slots"/>
+    <meta property="og:url" content="#"/>
+    <meta property="og:site_name" content="Python扫盲-slots"/>
+    <meta name="description" content="Python扫盲-slots"/>
+    <!-- End SEO tag -->
+</head>
+
+<body>
+<header>
+    <div class="inner">
+        <a href="/">
+            <h1>彬彬同学丶</h1>
+        </a>
+        <h2>Choose what you love,love what you choose.</h2>
+    </div>
+</header>
+
+<div id="content-wrapper">
+    <div class="inner clearfix">
+        <section id="main-content">
+        
+            
+                <h1 id="art-title">Python扫盲-slots</h1>
+            
+            
+            
+                <p><em>Base on Python3.6</em></p>
+<p>扫盲系列，简单的记录下 <code>__slots__</code>的使用。目前个人项目中基本没有用到过这个属性。下面有一段partial偏函数的源码，其中就有使用到slots，简单的扫下盲记录下。</p>
+<p>另外传播更广的是这个，大佬使用slots节省9GB的内存：<a href="http://tech.oyster.com/save-ram-with-python-slots/，">http://tech.oyster.com/save-ram-with-python-slots/，</a></p>
+<p>原理里面也有讲了，默认Python用字典存储对象的实例属性，允许动态设置新属性，不过字典开销在实例很多的情况下，就有点大了，当然一般人用不上2333，除非你会实例化到大量的实例。。。（万级别）</p>
+<p><em>By default Python uses a dict to store an object’s instance attributes. Which is usually fine, and it allows fully dynamic things like setting arbitrary new attributes at runtime.</em></p>
+<p><em>However, for small classes that have a few fixed attributes known at “compile time”, the dict is a waste of RAM, and this makes a real difference when you’re creating a million of them. You can tell Python not to use a dict, and only allocate space for a fixed set of attributes, by settings <code>__slots__</code> on the class to a fixed list of attribute names:</em></p>
+<p>偏函数中使用到的场景：</p>
+<div class="highlight"><pre><span></span><span class="k">class</span> <span class="nc">partial</span><span class="p">:</span>
+    <span class="sd">&quot;&quot;&quot;New function with partial application of the given arguments</span>
+<span class="sd">    and keywords.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="vm">__slots__</span> <span class="o">=</span> <span class="s2">&quot;func&quot;</span><span class="p">,</span> <span class="s2">&quot;args&quot;</span><span class="p">,</span> <span class="s2">&quot;keywords&quot;</span><span class="p">,</span> <span class="s2">&quot;__dict__&quot;</span><span class="p">,</span> <span class="s2">&quot;__weakref__&quot;</span>
+
+    <span class="k">def</span> <span class="fm">__new__</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">keywords</span><span class="p">):</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">args</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s2">&quot;descriptor &#39;__new__&#39; of partial needs an argument&quot;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">args</span><span class="p">)</span> <span class="o">&lt;</span> <span class="mi">2</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s2">&quot;type &#39;partial&#39; takes at least one argument&quot;</span><span class="p">)</span>
+        <span class="bp">cls</span><span class="p">,</span> <span class="n">func</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span> <span class="o">=</span> <span class="n">args</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">callable</span><span class="p">(</span><span class="n">func</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s2">&quot;the first argument must be callable&quot;</span><span class="p">)</span>
+        <span class="n">args</span> <span class="o">=</span> <span class="nb">tuple</span><span class="p">(</span><span class="n">args</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">func</span><span class="p">,</span> <span class="s2">&quot;func&quot;</span><span class="p">):</span>
+            <span class="n">args</span> <span class="o">=</span> <span class="n">func</span><span class="o">.</span><span class="n">args</span> <span class="o">+</span> <span class="n">args</span>
+            <span class="n">tmpkw</span> <span class="o">=</span> <span class="n">func</span><span class="o">.</span><span class="n">keywords</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+            <span class="n">tmpkw</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">keywords</span><span class="p">)</span>
+            <span class="n">keywords</span> <span class="o">=</span> <span class="n">tmpkw</span>
+            <span class="k">del</span> <span class="n">tmpkw</span>
+            <span class="n">func</span> <span class="o">=</span> <span class="n">func</span><span class="o">.</span><span class="n">func</span>
+
+        <span class="bp">self</span> <span class="o">=</span> <span class="nb">super</span><span class="p">(</span><span class="n">partial</span><span class="p">,</span> <span class="bp">cls</span><span class="p">)</span><span class="o">.</span><span class="fm">__new__</span><span class="p">(</span><span class="bp">cls</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">func</span> <span class="o">=</span> <span class="n">func</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">args</span> <span class="o">=</span> <span class="n">args</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">keywords</span> <span class="o">=</span> <span class="n">keywords</span>
+        <span class="k">return</span> <span class="bp">self</span>
+</pre></div>
+<p>看看slots会不会节省内存，下面代码基于Py3和linux系统，对于resource模块，系统资源管理，也是值得一瞄的模块。另外需要注意，如果在py2中，需要显示的继承object，新式类和经典类的表现又不太一样。</p>
+<div class="highlight"><pre><span></span><span class="c1"># coding:utf-8</span>
+<span class="kn">import</span> <span class="nn">resource</span>
+
+<span class="k">class</span> <span class="nc">A</span><span class="p">:</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">name</span> <span class="o">=</span> <span class="s1">&#39;bin&#39;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">age</span> <span class="o">=</span> <span class="mi">10</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">is_man</span> <span class="o">=</span> <span class="bp">True</span>
+
+<span class="k">class</span> <span class="nc">B</span><span class="p">:</span>
+    <span class="vm">__slots__</span> <span class="o">=</span> <span class="s1">&#39;name&#39;</span><span class="p">,</span> <span class="s1">&#39;age&#39;</span><span class="p">,</span> <span class="s1">&#39;is_man&#39;</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">name</span> <span class="o">=</span> <span class="s1">&#39;bin&#39;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">age</span> <span class="o">=</span> <span class="mi">10</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">is_man</span> <span class="o">=</span> <span class="bp">True</span>
+
+<span class="c1"># 测试下py2中, 默认都是经典类, 显示继承object才是新式类, 而py3默认全都是新式类了</span>
+<span class="k">class</span> <span class="nc">C</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+    <span class="vm">__slots__</span> <span class="o">=</span> <span class="s1">&#39;name&#39;</span><span class="p">,</span> <span class="s1">&#39;age&#39;</span><span class="p">,</span> <span class="s1">&#39;is_man&#39;</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">name</span> <span class="o">=</span> <span class="s1">&#39;bin&#39;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">age</span> <span class="o">=</span> <span class="mi">10</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">is_man</span> <span class="o">=</span> <span class="bp">True</span>
+
+<span class="k">def</span> <span class="nf">test</span><span class="p">(</span><span class="bp">cls</span><span class="p">):</span>
+    <span class="n">mem_init</span> <span class="o">=</span> <span class="n">resource</span><span class="o">.</span><span class="n">getrusage</span><span class="p">(</span><span class="n">resource</span><span class="o">.</span><span class="n">RUSAGE_SELF</span><span class="p">)</span><span class="o">.</span><span class="n">ru_maxrss</span>
+
+    <span class="n">lis</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">500000</span><span class="p">):</span>
+        <span class="n">lis</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="bp">cls</span><span class="p">())</span>
+    <span class="n">mem_final</span> <span class="o">=</span> <span class="n">resource</span><span class="o">.</span><span class="n">getrusage</span><span class="p">(</span><span class="n">resource</span><span class="o">.</span><span class="n">RUSAGE_SELF</span><span class="p">)</span><span class="o">.</span><span class="n">ru_maxrss</span>
+    <span class="k">del</span> <span class="n">lis</span>
+
+    <span class="k">print</span><span class="p">(</span><span class="s1">&#39;Class: {}:</span><span class="se">\n</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="nb">getattr</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="s1">&#39;__name__&#39;</span><span class="p">)))</span>
+    <span class="k">print</span><span class="p">(</span><span class="s1">&#39;Initial RAM usage: {:14,}&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">mem_init</span><span class="p">))</span>
+    <span class="k">print</span><span class="p">(</span><span class="s1">&#39;  Final RAM usage: {:14,}&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">mem_final</span><span class="p">))</span>
+    <span class="k">print</span><span class="p">(</span><span class="s1">&#39;-&#39;</span> <span class="o">*</span> <span class="mi">20</span><span class="p">)</span>
+
+
+<span class="k">if</span> <span class="vm">__name__</span> <span class="o">==</span> <span class="s1">&#39;__main__&#39;</span><span class="p">:</span>
+    <span class="kn">import</span> <span class="nn">sys</span>
+    <span class="c1"># globals会以字典的格式返回当前位置上的全部全局变量，我们这样子根据外部参数传入调用</span>
+    <span class="n">test</span><span class="p">(</span><span class="nb">globals</span><span class="p">()[</span><span class="n">sys</span><span class="o">.</span><span class="n">argv</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">upper</span><span class="p">()])</span>
+</pre></div>
+<p>我们运行下，可以看到B相较于A的确节省了一半的内存。不过这是在5W个实例的情况下2333</p>
+<div class="highlight"><pre><span></span><span class="o">(</span>training_camp<span class="o">)</span> <span class="o">[</span>zbb@VM_45_12_centos ~<span class="o">]</span>$ python <span class="m">1</span>.py a
+Class: A:
+
+Initial RAM usage:          <span class="m">5</span>,640
+  Final RAM usage:         <span class="m">92</span>,872
+--------------------
+<span class="o">(</span>training_camp<span class="o">)</span> <span class="o">[</span>zbb@VM_45_12_centos ~<span class="o">]</span>$ python <span class="m">1</span>.py b
+Class: B:
+
+Initial RAM usage:          <span class="m">5</span>,636
+  Final RAM usage:         <span class="m">41</span>,328
+--------------------
+</pre></div>
+<p>顺便贴个py2的，会发现无论是写没slots，A和B的表现是差不多，而且内存占用比起Py3也大很多。只有C新式类使用了slots才节省了内存空间，新式类在实现上肯定是做了很多的优化呀。以后有机会瞅瞅这个传说中的object</p>
+<div class="highlight"><pre><span></span><span class="o">[</span>zbb@VM_45_12_centos ~<span class="o">]</span>$ python <span class="m">1</span>.py a
+Class: A:
+
+Initial RAM usage:          <span class="m">4</span>,588
+  Final RAM usage:        <span class="m">202</span>,952
+--------------------
+<span class="o">[</span>zbb@VM_45_12_centos ~<span class="o">]</span>$ python <span class="m">1</span>.py b
+Class: B:
+
+Initial RAM usage:          <span class="m">4</span>,584
+  Final RAM usage:        <span class="m">202</span>,948
+--------------------
+<span class="o">[</span>zbb@VM_45_12_centos ~<span class="o">]</span>$ python <span class="m">1</span>.py c
+Class: C:
+
+Initial RAM usage:          <span class="m">4</span>,584
+  Final RAM usage:         <span class="m">60</span>,164
+--------------------
+</pre></div>
+<p>另外除了上面节省内存，还有另外个广为人知的功能。</p>
+<p><code>__slots__</code> 定义了， 类实例只能有这些属性，不能动态的添加其他属性，顺便贴个简单的例子</p>
+<div class="highlight"><pre><span></span><span class="k">class</span> <span class="nc">Test1</span><span class="p">:</span>
+    <span class="c1"># 只能定义name和age两个属性</span>
+    <span class="vm">__slots__</span> <span class="o">=</span> <span class="p">(</span><span class="s2">&quot;name&quot;</span><span class="p">,</span> <span class="s2">&quot;age&quot;</span><span class="p">)</span>
+
+<span class="k">class</span> <span class="nc">Test2</span><span class="p">(</span><span class="n">Test1</span><span class="p">):</span>
+    <span class="c1"># slots对继承的子类是不起作用的</span>
+    <span class="k">pass</span>
+
+<span class="k">class</span> <span class="nc">Test3</span><span class="p">(</span><span class="n">Test1</span><span class="p">):</span>
+    <span class="c1"># 除非子类也定义了slots, 那么允许定义的属性就是 自己的 + 父亲的</span>
+    <span class="vm">__slots__</span> <span class="o">=</span> <span class="p">(</span><span class="s2">&quot;sex&quot;</span><span class="p">,</span> <span class="p">)</span>
+
+<span class="n">test1</span> <span class="o">=</span> <span class="n">Test1</span><span class="p">()</span>
+<span class="n">test1</span><span class="o">.</span><span class="n">name</span> <span class="o">=</span> <span class="s1">&#39;bin&#39;</span>
+<span class="c1"># test1.sex = &#39;1&#39;  # AttributeError: &#39;Test1&#39; object has no attribute &#39;sex&#39;, 会报错, slots中没有这个属性</span>
+
+<span class="n">test2</span> <span class="o">=</span> <span class="n">Test2</span><span class="p">()</span>
+<span class="n">test2</span><span class="o">.</span><span class="n">name</span> <span class="o">=</span> <span class="s1">&#39;bin&#39;</span>
+<span class="n">test2</span><span class="o">.</span><span class="n">sex</span> <span class="o">=</span> <span class="s1">&#39;1&#39;</span>  <span class="c1"># slots对继承的子类是不起作用的, 除非子类也定义slots</span>
+
+<span class="n">test3</span> <span class="o">=</span> <span class="n">Test3</span><span class="p">()</span>
+<span class="n">test3</span><span class="o">.</span><span class="n">name</span> <span class="o">=</span> <span class="s1">&#39;bin&#39;</span>
+<span class="n">test3</span><span class="o">.</span><span class="n">sex</span> <span class="o">=</span> <span class="s1">&#39;1&#39;</span>
+<span class="c1"># test3.lover = &#39;nana&#39;  # AttributeError: &#39;Test3&#39; object has no attribute &#39;lover&#39;, 会报错, 子类父类中都没</span>
+</pre></div>
+<p><strong>副作用</strong></p>
+<ol>
+<li><p>子类需要使用到slots的话，继承父类之后也必需定义<code>__slots__</code></p>
+</li>
+<li><p>不能动态的给实例增加属性啦，失去了一点Python作为动态语言的灵活性</p>
+</li>
+<li><p>弱引用需要把<code>__weakref__</code>放进<code>__slots__</code>中，这个日后研究下弱引用</p>
+</li>
+</ol>
+<div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">weakref</span> <span class="kn">import</span> <span class="n">ref</span>
+
+<span class="k">class</span> <span class="nc">A</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+    <span class="vm">__slots__</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;b&#39;</span><span class="p">]</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">b</span> <span class="o">=</span> <span class="mi">1</span>
+
+
+<span class="k">class</span> <span class="nc">B</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+    <span class="vm">__slots__</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;b&#39;</span><span class="p">,</span> <span class="s1">&#39;__weakref__&#39;</span><span class="p">]</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">b</span> <span class="o">=</span> <span class="mi">1</span>
+
+<span class="n">a</span> <span class="o">=</span> <span class="n">A</span><span class="p">()</span>
+<span class="c1"># ra = ref(a)  # TypeError: cannot create weak reference to &#39;A&#39; object</span>
+
+<span class="n">b</span> <span class="o">=</span> <span class="n">B</span><span class="p">()</span>
+<span class="n">rb</span> <span class="o">=</span> <span class="n">ref</span><span class="p">(</span><span class="n">b</span><span class="p">)</span>
+</pre></div>
+
+            
+            
+            
+
+        </section>
+
+        <aside id="sidebar">
+            <blockquote class="route">关于我</blockquote>
+            <p>19本科毕业生，代码的搬运工，此界面灵感来自公众号【运维咖啡吧】</p>
+            
+            <blockquote class="route">Github地址</blockquote>
+            <a href="https://github.com/enjoy-binbin">
+                <img border="0" src="https://avatars2.githubusercontent.com/u/22811481" width="100%" height="100%" alt="enjoy-binbin"/>
+            </a>
+            
+            
+        </aside>
+    </div>
+</div>
+</body>
+
+</html>

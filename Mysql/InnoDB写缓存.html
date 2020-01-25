@@ -1,0 +1,151 @@
+
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta name="theme-color" content="#2879d0"/>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1"/>
+    <meta name="copyright" content="©2020 测试所有"/>
+    <link rel="stylesheet" href="/css/style.min.css" media="screen" type="text/css"/>
+
+    <!-- Begin SEO tag -->
+    <title>InnoDB写缓存</title>
+    <meta property="og:locale" content="zh_CN"/>
+    <meta property="og:type" content="article"/>
+    <meta property="og:title" content="InnoDB写缓存"/>
+    <meta property="og:description" content="InnoDB写缓存"/>
+    <meta property="og:url" content="#"/>
+    <meta property="og:site_name" content="InnoDB写缓存"/>
+    <meta name="description" content="InnoDB写缓存"/>
+    <!-- End SEO tag -->
+</head>
+
+<body>
+<header>
+    <div class="inner">
+        <a href="/">
+            <h1>彬彬同学丶</h1>
+        </a>
+        <h2>Choose what you love,love what you choose.</h2>
+    </div>
+</header>
+
+<div id="content-wrapper">
+    <div class="inner clearfix">
+        <section id="main-content">
+        
+            
+                <h1 id="art-title">InnoDB写缓存</h1>
+            
+            
+            
+                <p>记录Mysql中InnoDB缓存池和写缓存相关笔记</p>
+<p><em>Base on Mysql5.7</em></p>
+<p>应用系统分层架构，为了加速数据访问，常常会把最常访问的数据（热数据），放在<strong>缓存</strong>（cache）里，避免每次读请求都去访问数据库，从而提升读性能。</p>
+<p>之前记录了InnoDB中缓存池的一些笔记，读操作可以应用到缓存池，那么写操作呢。</p>
+<p><strong>预备知识</strong></p>
+<p>（1）MySQL数据存储包含内存与磁盘<strong>两个部分</strong>；</p>
+<p>（2）内存缓冲池(buffer pool)以页为单位，缓存最热的数据页(data page)与索引页(index page)；</p>
+<p>（3）InnoDB以变种LRU算法管理缓冲池，并能够解决“<strong>预读失效</strong>”与“<strong>缓冲池污染</strong>”的问题；</p>
+<p>（4）磁盘上采用先写日志再写磁盘的(WAL，write ahead logging，预写式日志)，所有修改在提交之前，先写redo log日志文件，再以一定频率根据redo log将脏页刷新到磁盘中。其中redo log是物理日志（存储了数据被修改的值），恢复速度远快于逻辑日志（存储了逻辑sql修改语句，binlog）。redo log是innoDB层产生的，binblog是在server层产生的，且binlog会先于redo log被记录。</p>
+<p><strong>情况一</strong></p>
+<p>假如要修改的页正好在缓冲池内：</p>
+<p>（1）首先先直接修改缓冲池中的页，一次内存操作；</p>
+<p>（2）然后再将数据修改后的值写入redo log，一次磁盘顺序写操作；</p>
+<p>这样就完成了一次更新修改操作，这样的效率是最高的。（只有redo log完成，一次修改操作才算成功）</p>
+<p><em>画外音：像写日志这种顺序写，每秒几万次没问题。</em></p>
+<p><strong>是否会出现一致性问题呢？</strong></p>
+<p>并不会。</p>
+<p>（1）读取，会命中缓冲池的页；</p>
+<p>（2）缓冲池LRU数据淘汰，会将“脏页”刷回磁盘；</p>
+<p>（3）数据库异常奔溃，也能够从redo log中恢复数据；</p>
+<p><strong>什么时候缓冲池中的页，会刷到磁盘上呢？</strong></p>
+<p>缓存池里经过修改的页，但是还没刷回磁盘的时候，就是脏页了。</p>
+<p>在系统空闲的时候定期刷磁盘，而不是每次刷磁盘，能够降低磁盘IO，提升MySQL的性能。<em>批量写，是常见的优化手段。</em>当缓存池不够用的时候，也会刷脏页，这时候会有个check point检查点，来记录刷了哪些脏页。</p>
+<p><strong>情况二</strong></p>
+<p>假如要修改的页不在缓冲池内。</p>
+<p>（1）首先需要先把对应的页，从磁盘读到到缓冲池，一次磁盘随机读操作；</p>
+<p>（2）然后修改缓冲池中的页，一次内存操作；</p>
+<p>（3）最后写入redo log，一次磁盘顺序写操作；</p>
+<p>没有命中缓冲池的时候，<strong>至少产生一次磁盘IO</strong>，对于写多读少的业务场景，<strong>是否还有优化的空间呢？</strong></p>
+<p>这即是InnoDB考虑的问题，又是本文将要讨论的写缓冲(change buffer)。</p>
+<p><em>画外音：从名字容易看出，写缓冲是降低磁盘IO，提升数据库写性能的一种机制。</em></p>
+<p><strong>什么是InnoDB的写缓冲/变更缓存？</strong></p>
+<p>在MySQL5.5之前，叫插入缓冲(insert buffer)，只针对insert做了优化；现在对delete和update也有效，叫做写缓冲(change buffer) / 变更缓存。</p>
+<p>变更缓存区也是缓存池的一部分，存储对未加载到缓冲池的辅助索引的修改。等到数据被读取时，再将数据合并到缓冲池里。</p>
+<p>它是一种应用在<strong>非唯一普通索引页</strong>(non-unique secondary index page)不在缓冲池中，对页进行了写操作，并不会立刻将磁盘页加载到缓冲池，而仅仅记录缓冲变更(buffer changes)，等未来数据被读取时，再将数据合并(merge)恢复到缓冲池中的技术。写缓冲的<strong>目的</strong>是降低写操作的磁盘IO，提升数据库性能。</p>
+<p><strong>InnoDB加入写缓冲优化，上文“情况二”流程会有什么变化？</strong></p>
+<p>假如要修改的页不在缓冲池内。加入写缓冲优化后，流程优化为：</p>
+<p>（1）在写缓冲中记录这个操作，一次内存操作；</p>
+<p>（2）写入redo log，一次磁盘顺序写操作；</p>
+<p>虽然首次加载数据时，会多一次内存操作，即合并变更缓冲内的变更记录，但是相比于一次磁盘I/O，开销可以忽略不计。其性能与，这个索引页在缓冲池中，相近。</p>
+<p><strong>是否会出现一致性问题呢？</strong></p>
+<p>也不会。</p>
+<p>（1）数据库异常奔溃，能够从redo log中恢复数据；</p>
+<p>（2）写缓冲不只是一个内存结构，它也会被定期刷盘到写缓冲系统表空间；</p>
+<p>（3）数据真正被读取时，有另外的流程，会将数据合并到缓冲池；</p>
+<p>还有一个遗漏问题，<strong>为什么写缓冲优化，仅适用于非唯一普通索引页呢？</strong></p>
+<p>如果索引设置了唯一(unique)属性，在进行修改操作时，InnoDB必须进行唯一性检查。也就是说，索引页即使不在缓冲池，磁盘上的页读取无法避免(否则怎么校验是否唯一，必须得实际读到数据)，此时就应该直接把相应的页放入缓冲池再进行修改，而不应该再整写缓冲这个幺蛾子了2333。</p>
+<p>除了数据页被访问，<strong>还有哪些场景会触发刷写缓冲中的数据呢？</strong></p>
+<p>还有这么几种情况，会刷写缓冲中的数据：</p>
+<p>（1）有一个后台线程，认为数据库空闲时；</p>
+<p>（2）数据库缓冲池不够用时；</p>
+<p>（3）数据库正常关闭时；</p>
+<p>（4）redo log写满时；</p>
+<p><em>画外音：几乎不会出现redo log写满，此时整个数据库处于无法写入的不可用状态。</em></p>
+<p><strong>什么业务场景，适合开启InnoDB的写缓冲机制？</strong></p>
+<p>先说什么时候不适合，如上文分析，当：</p>
+<p>（1）数据库都是唯一索引；</p>
+<p>（2）或者，写入一个数据后，会立刻读取它；</p>
+<p>这两类场景，在写操作进行时（进行后），本来就要进行进行页读取，本来相应页面就要入缓冲池，此时写缓存反倒成了负担，增加了复杂度。</p>
+<p>什么时候适合使用写缓冲，如果：</p>
+<p>（1）数据库大部分是非唯一索引；</p>
+<p>（2）业务是写多读少，或者不是写后立刻读取；</p>
+<p>可以使用写缓冲，将原本每次写入都需要进行磁盘IO的SQL，优化定期批量写磁盘。</p>
+<p><em>画外音：例如，账单流水业务。</em></p>
+<p><strong>上述原理，对应InnoDB里哪些参数？</strong></p>
+<p>有两个比较重要的参数。</p>
+<div class="highlight"><pre><span></span><span class="n">mysql</span><span class="o">&gt;</span> <span class="k">show</span> <span class="n">variables</span> <span class="k">like</span> <span class="s1">&#39;%innodb_change_buffer_max_size%&#39;</span><span class="p">;</span>
+<span class="o">+-------------------------------+-------+</span>
+<span class="o">|</span> <span class="n">Variable_name</span>                 <span class="o">|</span> <span class="n">Value</span> <span class="o">|</span>
+<span class="o">+-------------------------------+-------+</span>
+<span class="o">|</span> <span class="n">innodb_change_buffer_max_size</span> <span class="o">|</span> <span class="mi">25</span>    <span class="o">|</span>
+<span class="o">+-------------------------------+-------+</span>
+<span class="mi">1</span> <span class="n">row</span> <span class="k">in</span> <span class="kt">set</span> <span class="p">(</span><span class="mi">0</span><span class="p">.</span><span class="mi">01</span> <span class="n">sec</span><span class="p">)</span>
+
+<span class="n">mysql</span><span class="o">&gt;</span> <span class="k">show</span> <span class="n">variables</span> <span class="k">like</span> <span class="s1">&#39;%innodb_change_buffering%&#39;</span><span class="p">;</span>
+<span class="o">+-------------------------+-------+</span>
+<span class="o">|</span> <span class="n">Variable_name</span>           <span class="o">|</span> <span class="n">Value</span> <span class="o">|</span>
+<span class="o">+-------------------------+-------+</span>
+<span class="o">|</span> <span class="n">innodb_change_buffering</span> <span class="o">|</span> <span class="k">all</span>   <span class="o">|</span>
+<span class="o">+-------------------------+-------+</span>
+<span class="mi">1</span> <span class="n">row</span> <span class="k">in</span> <span class="kt">set</span> <span class="p">(</span><span class="mi">0</span><span class="p">.</span><span class="mi">00</span> <span class="n">sec</span><span class="p">)</span>
+</pre></div>
+<p><strong>参数</strong>：innodb_change_buffer_max_size</p>
+<p><strong>介绍</strong>：配置写缓冲的大小，占整个缓冲池的比例，默认值是25%，最大值是50%。</p>
+<p><em>画外音：写多读少的业务，才需要调大这个值，读多写少的业务，25%其实也多了。</em></p>
+<p><strong>参数</strong>：innodb_change_buffering</p>
+<p><strong>介绍</strong>：变更缓存的开关，默认支持全部操作，配置哪些写操作启用写缓冲，可以设置成all/none/inserts/deletes等。</p>
+
+            
+            
+            
+
+        </section>
+
+        <aside id="sidebar">
+            <blockquote class="route">关于我</blockquote>
+            <p>19本科毕业生，代码的搬运工，此界面灵感来自公众号【运维咖啡吧】</p>
+            
+            <blockquote class="route">Github地址</blockquote>
+            <a href="https://github.com/enjoy-binbin">
+                <img border="0" src="https://avatars2.githubusercontent.com/u/22811481" width="100%" height="100%" alt="enjoy-binbin"/>
+            </a>
+            
+            
+        </aside>
+    </div>
+</div>
+</body>
+
+</html>

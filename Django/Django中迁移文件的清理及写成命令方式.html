@@ -1,0 +1,232 @@
+
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta name="theme-color" content="#2879d0"/>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1"/>
+    <meta name="copyright" content="©2020 测试所有"/>
+    <link rel="stylesheet" href="/css/style.min.css" media="screen" type="text/css"/>
+
+    <!-- Begin SEO tag -->
+    <title>Django中迁移文件的清理及写成命令方式</title>
+    <meta property="og:locale" content="zh_CN"/>
+    <meta property="og:type" content="article"/>
+    <meta property="og:title" content="Django中迁移文件的清理及写成命令方式"/>
+    <meta property="og:description" content="Django中迁移文件的清理及写成命令方式"/>
+    <meta property="og:url" content="#"/>
+    <meta property="og:site_name" content="Django中迁移文件的清理及写成命令方式"/>
+    <meta name="description" content="Django中迁移文件的清理及写成命令方式"/>
+    <!-- End SEO tag -->
+</head>
+
+<body>
+<header>
+    <div class="inner">
+        <a href="/">
+            <h1>彬彬同学丶</h1>
+        </a>
+        <h2>Choose what you love,love what you choose.</h2>
+    </div>
+</header>
+
+<div id="content-wrapper">
+    <div class="inner clearfix">
+        <section id="main-content">
+        
+            
+                <h1 id="art-title">Django中迁移文件的清理及写成命令方式</h1>
+            
+            
+            
+                <hr>
+<p>title: Django中迁移文件的清理及写成命令方式
+date: 2019-06-14 09:35:51
+tags:</p>
+<ul>
+<li>django</li>
+<li>migrations</li>
+<li>command
+categories:</li>
+<li>django</li>
+</ul>
+<hr>
+<p>Django迁移系统的开发和优化使其能够进行大量迁移。 通常，您不应该介意在代码库中保留大量的模型迁移。 即使有时它会导致一些不良影响，比如在运行测试时耗费大量时间。 但在这种情况下，您可以轻松禁用迁移（尽管目前没有内置选项）。下面讲下Django中如何清理migrations文件</p>
+<h4>场景一：</h4>
+<p>在你自己的本地环境上，想清理，并且你不介意丢掉整个数据库。</p>
+<h5>1. 删除项目中所有的迁移文件</h5>
+<p>删除项目中所有app下的migrations里的内容，除了 <code>__init__.py</code>，win下直接手动删除即可，而在unix-like系统下可以通过执行下面的命令 <strong>.代表当前项目目录</strong></p>
+<div class="highlight"><pre><span></span><span class="n">find</span> <span class="p">.</span> <span class="n">-path</span> <span class="s2">&quot;*/migrations/*.py&quot;</span> <span class="o">-not</span> <span class="n">-name</span> <span class="s2">&quot;__init__.py&quot;</span> <span class="n">-delete</span>
+</pre></div>
+<h5>2. 删除整个数据库，可以利用navicat或者命令行drop</h5>
+<h5>3. 重新创建新数据库和进行迁移</h5>
+<div class="highlight"><pre><span></span><span class="n">mysql</span> <span class="n">-h127</span><span class="p">.</span><span class="n">0</span><span class="p">.</span><span class="n">0</span><span class="p">.</span><span class="n">1</span> <span class="n">-P3306</span> <span class="n">-uroot</span> <span class="n">-p</span> <span class="n">-e</span><span class="s2">&quot;create database blog default character set utf8 collate utf8_general_ci;&quot;</span>
+
+<span class="n">python</span> <span class="n">manage</span><span class="p">.</span><span class="n">py</span> <span class="n">makemigrations</span>
+<span class="n">python</span> <span class="n">manage</span><span class="p">.</span><span class="n">py</span> <span class="n">migrate</span>
+</pre></div>
+<h3>场景二：</h3>
+<p>想保留自己数据库的同时清理迁移文件。</p>
+<h5>1. 确保你已经是最新的迁移文件</h5>
+<pre><code>python manage.py makemigrations
+python manage.py migrate
+</code></pre>
+<h5>2. 手动方法一套化：清理迁移文件和truncate数据库里的<code>django_migrations</code>表</h5>
+<h5>3. 手动清理各个app：</h5>
+<pre><code>python manage.py showmigrations
+</code></pre>
+<p>结果：(我删除了一些内容，不然太多)</p>
+<pre><code>admin
+ [X] 0001_initial
+ [X] 0002_logentry_remove_auto_add
+ [X] 0003_logentry_add_action_flag_choices
+blog
+ [X] 0001_initial
+ [X] 0002_auto_20190310_1511
+ [X] 0003_auto_20190318_2034
+ [X] 0004_article_type
+ [X] 0005_photo
+ [X] 0006_guestbook
+ [X] 0007_auto_20190512_2311
+ [X] 0008_auto_20190512_2347
+ [X] 0009_auto_20190528_1022
+ [X] 0010_setting_user_verify_email
+ [X] 0011_setting_enable_multi_user
+</code></pre>
+<p>清理迁移记录，下面的<strong>blog</strong>对应自己的<strong>app_name</strong>，会删除django_migrations表里对应app迁移记录</p>
+<pre><code>python manage.py migrate --fake blog zero
+
+# 根据官网的描述： https://docs.djangoproject.com/zh-hans/2.2/ref/django-admin/#migrate
+# 对于 python manage.py migrate --fake
+# 不会真的执行sql，而只是将迁移文件记录加入的django_migrations表里
+</code></pre>
+<p>结果(同样有省略信息)：</p>
+<pre><code>Operations to perform:
+  Unapply all migrations: blog
+Running migrations:
+  ....
+  Unapplying blog.0011_setting_enable_multi_user... FAKED
+  ....
+</code></pre>
+<p>再执行此<code>showmigrations</code>看看结果如何：</p>
+<pre><code>python manage.py showmigrations
+
+admin
+ [X] 0001_initial
+ [X] 0002_logentry_remove_auto_add
+ [X] 0003_logentry_add_action_flag_choices
+blog
+ [ ] 0001_initial
+ [ ] 0002_auto_20190310_1511
+ [ ] 0003_auto_20190318_2034
+ [ ] 0004_article_type
+ [ ] 0005_photo
+ [ ] 0006_guestbook
+ [ ] 0007_auto_20190512_2311
+ [ ] 0008_auto_20190512_2347
+ [ ] 0009_auto_20190528_1022
+ [ ] 0010_setting_user_verify_email
+ [ ] 0011_setting_enable_multi_user
+</code></pre>
+<p>你必须这样一次次清理你想清理的迁移文件的app。</p>
+<h5>3. 手动删除app/migrations里的迁移文件，再次<code>showmigrations</code>看看结果</h5>
+<pre><code>admin
+ [X] 0001_initial
+ [X] 0002_logentry_remove_auto_add
+ [X] 0003_logentry_add_action_flag_choices
+blog
+ (no migrations)
+</code></pre>
+<h5>4. 进行初始化的伪造迁移</h5>
+<p>在现在情况下无法完成正常的migrate，因为库表都存在，需要进行伪造迁移</p>
+<pre><code>python manage.py makemigrations
+python manage.py migrate --fake-initial
+</code></pre>
+<p>结果：</p>
+<pre><code>Operations to perform:
+  Apply all migrations: admin, blog
+Running migrations:
+    Applying blog.0001_initial... FAKED
+</code></pre>
+<p>再次<code>showmigtaions</code>观察结果：</p>
+<pre><code>admin
+ [X] 0001_initial
+ [X] 0002_logentry_remove_auto_add
+ [X] 0003_logentry_add_action_flag_choices
+blog
+ [X] 0001_initial
+</code></pre>
+<p>这时我们就完成了清理工作。我个人是更喜欢进行truncate操作hh</p>
+<h4>封装成命令</h4>
+<p>同样，这里使用到了 blog/management/commands/clear_migrations.py，django中命令的用法</p>
+<div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">os</span>
+<span class="kn">import</span> <span class="nn">sys</span>
+<span class="kn">import</span> <span class="nn">shutil</span>
+
+<span class="kn">from</span> <span class="nn">django.core.management.base</span> <span class="kn">import</span> <span class="n">BaseCommand</span>
+<span class="kn">from</span> <span class="nn">django.conf</span> <span class="kn">import</span> <span class="n">settings</span>
+
+
+<span class="k">class</span> <span class="nc">Command</span><span class="p">(</span><span class="n">BaseCommand</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot; run python manage.py clear_migrations</span>
+<span class="sd">        清理migrations的迁移文件, 后自动再进行初始化迁移</span>
+<span class="sd">        也就是在不影响自己数据库数据的前提下, 清理app/migrations下的所有迁移文件</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">help</span> <span class="o">=</span> <span class="s1">&#39;Clear all migrations files in project and auto migrate --fake-initial&#39;</span>
+
+    <span class="k">def</span> <span class="nf">handle</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">options</span><span class="p">):</span>
+        <span class="k">def</span> <span class="nf">get_app</span><span class="p">():</span>
+            <span class="sd">&quot;&quot;&quot; 获取settings里的所有app &quot;&quot;&quot;</span>
+            <span class="k">for</span> <span class="n">app</span> <span class="ow">in</span> <span class="n">settings</span><span class="o">.</span><span class="n">INSTALLED_APPS</span><span class="p">:</span>
+                <span class="n">path</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">settings</span><span class="o">.</span><span class="n">BASE_DIR</span><span class="p">,</span> <span class="n">app</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s2">&quot;.&quot;</span><span class="p">,</span> <span class="s2">&quot;/&quot;</span><span class="p">),</span> <span class="s2">&quot;migrations&quot;</span><span class="p">)</span>
+                <span class="k">if</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">exists</span><span class="p">(</span><span class="n">path</span><span class="p">):</span>
+                    <span class="k">yield</span> <span class="n">app</span><span class="p">,</span> <span class="n">path</span>
+
+        <span class="k">def</span> <span class="nf">clear</span><span class="p">(</span><span class="n">path</span><span class="p">):</span>
+            <span class="n">shutil</span><span class="o">.</span><span class="n">rmtree</span><span class="p">(</span><span class="n">path</span><span class="p">)</span>  <span class="c1"># 递归删除目录</span>
+            <span class="n">os</span><span class="o">.</span><span class="n">makedirs</span><span class="p">(</span><span class="n">path</span><span class="p">)</span>
+            <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">path</span><span class="p">,</span> <span class="s2">&quot;__init__.py&quot;</span><span class="p">),</span> <span class="s2">&quot;w+&quot;</span><span class="p">)</span> <span class="k">as</span> <span class="n">ff</span><span class="p">:</span>
+                <span class="c1"># 创建__init__包文件</span>
+                <span class="k">pass</span>
+
+        <span class="c1"># 执行命令migrate --fake app zero</span>
+        <span class="k">for</span> <span class="n">app_name</span><span class="p">,</span> <span class="n">app_path</span> <span class="ow">in</span> <span class="n">get_app</span><span class="p">():</span>
+            <span class="c1"># D:\A-python\Django-blog\env\Scripts\python.exe manage.py migrate --fake user zero</span>
+            <span class="n">os</span><span class="o">.</span><span class="n">system</span><span class="p">(</span><span class="n">f</span><span class="s2">&quot;{sys.executable} manage.py migrate --fake {app_name} zero&quot;</span><span class="p">)</span>  <span class="c1"># sys.executable 当前python解释器</span>
+
+        <span class="c1"># 和上面分开写, 先fake全部app后再clear, 防止 Dependency on app with no migrations: [app]错误</span>
+        <span class="k">for</span> <span class="n">app_name</span><span class="p">,</span> <span class="n">app_path</span> <span class="ow">in</span> <span class="n">get_app</span><span class="p">():</span>
+            <span class="n">clear</span><span class="p">(</span><span class="n">app_path</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">stdout</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">style</span><span class="o">.</span><span class="n">SUCCESS</span><span class="p">(</span><span class="n">f</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2">Clear app: {app_name} migrations done</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">))</span>
+
+        <span class="c1"># 进行初始化的迁移 python manage.py migrate --help 查看帮助信息</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">stdout</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">style</span><span class="o">.</span><span class="n">SUCCESS</span><span class="p">(</span><span class="s1">&#39;</span><span class="se">\n</span><span class="s1">Running makemigrations and migrate --fake-initial</span><span class="se">\n\n</span><span class="s1">&#39;</span><span class="p">))</span>
+        <span class="n">os</span><span class="o">.</span><span class="n">system</span><span class="p">(</span><span class="n">f</span><span class="s2">&quot;{sys.executable} manage.py makemigrations&quot;</span><span class="p">)</span>
+        <span class="n">os</span><span class="o">.</span><span class="n">system</span><span class="p">(</span><span class="n">f</span><span class="s2">&quot;{sys.executable} manage.py migrate --fake-initial&quot;</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">stdout</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">style</span><span class="o">.</span><span class="n">SUCCESS</span><span class="p">(</span><span class="s1">&#39;</span><span class="se">\n</span><span class="s1">Successfully cleared!&#39;</span><span class="p">))</span>
+</pre></div>
+<p>参考文章：<a href="https://simpleisbetterthancomplex.com/tutorial/2016/07/26/how-to-reset-migrations.html">https://simpleisbetterthancomplex.com/tutorial/2016/07/26/how-to-reset-migrations.html</a></p>
+
+            
+            
+            
+
+        </section>
+
+        <aside id="sidebar">
+            <blockquote class="route">关于我</blockquote>
+            <p>19本科毕业生，代码的搬运工，此界面灵感来自公众号【运维咖啡吧】</p>
+            
+            <blockquote class="route">Github地址</blockquote>
+            <a href="https://github.com/enjoy-binbin">
+                <img border="0" src="https://avatars2.githubusercontent.com/u/22811481" width="100%" height="100%" alt="enjoy-binbin"/>
+            </a>
+            
+            
+        </aside>
+    </div>
+</div>
+</body>
+
+</html>

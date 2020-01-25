@@ -1,0 +1,92 @@
+
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta name="theme-color" content="#2879d0"/>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1"/>
+    <meta name="copyright" content="©2020 测试所有"/>
+    <link rel="stylesheet" href="/css/style.min.css" media="screen" type="text/css"/>
+
+    <!-- Begin SEO tag -->
+    <title>python鸭子类型</title>
+    <meta property="og:locale" content="zh_CN"/>
+    <meta property="og:type" content="article"/>
+    <meta property="og:title" content="python鸭子类型"/>
+    <meta property="og:description" content="python鸭子类型"/>
+    <meta property="og:url" content="#"/>
+    <meta property="og:site_name" content="python鸭子类型"/>
+    <meta name="description" content="python鸭子类型"/>
+    <!-- End SEO tag -->
+</head>
+
+<body>
+<header>
+    <div class="inner">
+        <a href="/">
+            <h1>彬彬同学丶</h1>
+        </a>
+        <h2>Choose what you love,love what you choose.</h2>
+    </div>
+</header>
+
+<div id="content-wrapper">
+    <div class="inner clearfix">
+        <section id="main-content">
+        
+            
+                <h1 id="art-title">python鸭子类型</h1>
+            
+            
+            
+                <hr>
+<p>title: python鸭子类型
+categories:</p>
+<ul>
+<li>学习
+tags:</li>
+<li>python
+date: 2019-06-03 16:33:35</li>
+</ul>
+<hr>
+<h4>基本定义</h4>
+<p>​   对于熟悉python的开发者来说，相信对于python的鸭子类型比较熟悉，所谓鸭子类型，在维基百科中的准确定义是‘是动态类型的一种风格。在这种风格中，一个对象有效的语义，不是由继承自特定的类或实现特定的接口，而是由"当前方法和属性的集合 决定。</p>
+<div class="highlight"><pre><span></span><span class="k">class</span> <span class="nc">Duck</span><span class="p">():</span>
+    <span class="k">def</span> <span class="nf">walk</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">print</span><span class="p">(</span><span class="s1">&#39;I walk like a duck&#39;</span><span class="p">)</span>
+    <span class="k">def</span> <span class="nf">swim</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">print</span><span class="p">(</span><span class="s1">&#39;i swim like a duck&#39;</span><span class="p">)</span>
+
+<span class="k">class</span> <span class="nc">Person</span><span class="p">():</span>
+    <span class="k">def</span> <span class="nf">walk</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">print</span><span class="p">(</span><span class="s1">&#39;this one walk like a duck&#39;</span><span class="p">)</span> 
+
+    <span class="k">def</span> <span class="nf">swim</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">print</span><span class="p">(</span><span class="s1">&#39;this man swim like a duck&#39;</span><span class="p">)</span>
+</pre></div>
+<p>可以很明显的看出，<code>Person</code>类拥有跟<code>Duck</code>类一样的方法，当有一个函数调用<code>Duck</code>类，并利用到了两个方法<code>walk()</code>和<code>swim()</code>。我们传入<code>Person</code>类也一样可以运行，函数并不会检查对象的类型是不是<code>Duck</code>，只要他拥有<code>walk()</code>和<code>swim()</code>方法，就可以正确的被调用。</p>
+<p>再举例，如果一个对象实现了<code>__getitem__</code>方法，那python的解释器就会把它当做一个<code>collection</code>，就可以在这个对象上使用切片，获取子项等方法；如果一个对象实现了<code>next</code>方法，python就会认为它是一个<code>iterator</code>，实现了<code>__iter__</code>和<code>next</code>就是<code>iterable</code>，就可以在这个对象上通过循环来获取各个子项。</p>
+<p>从上面可以看出，python鸭子类型的灵活性在于它关注的是这个所调用的对象是如何被使用的，而没有关注对象类型的本身是什么。所以在python中使用isinstance来判断传入参数的类型是不提倡的，更pythonic的方法是直接使用传入的参数，通过try，except来处理传入参数不符合要求的情况。我们应该通过传入对象的能力而不是传入对象的类型来使用该对象。</p>
+
+            
+            
+            
+
+        </section>
+
+        <aside id="sidebar">
+            <blockquote class="route">关于我</blockquote>
+            <p>19本科毕业生，代码的搬运工，此界面灵感来自公众号【运维咖啡吧】</p>
+            
+            <blockquote class="route">Github地址</blockquote>
+            <a href="https://github.com/enjoy-binbin">
+                <img border="0" src="https://avatars2.githubusercontent.com/u/22811481" width="100%" height="100%" alt="enjoy-binbin"/>
+            </a>
+            
+            
+        </aside>
+    </div>
+</div>
+</body>
+
+</html>

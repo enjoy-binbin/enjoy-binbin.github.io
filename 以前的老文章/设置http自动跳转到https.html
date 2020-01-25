@@ -1,0 +1,75 @@
+
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta name="theme-color" content="#2879d0"/>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1"/>
+    <meta name="copyright" content="©2020 测试所有"/>
+    <link rel="stylesheet" href="/css/style.min.css" media="screen" type="text/css"/>
+
+    <!-- Begin SEO tag -->
+    <title>设置http自动跳转到https</title>
+    <meta property="og:locale" content="zh_CN"/>
+    <meta property="og:type" content="article"/>
+    <meta property="og:title" content="设置http自动跳转到https"/>
+    <meta property="og:description" content="设置http自动跳转到https"/>
+    <meta property="og:url" content="#"/>
+    <meta property="og:site_name" content="设置http自动跳转到https"/>
+    <meta name="description" content="设置http自动跳转到https"/>
+    <!-- End SEO tag -->
+</head>
+
+<body>
+<header>
+    <div class="inner">
+        <a href="/">
+            <h1>彬彬同学丶</h1>
+        </a>
+        <h2>Choose what you love,love what you choose.</h2>
+    </div>
+</header>
+
+<div id="content-wrapper">
+    <div class="inner clearfix">
+        <section id="main-content">
+        
+            
+                <h1 id="art-title">设置http自动跳转到https</h1>
+            
+            
+            
+                <p><h2 style="border-bottom-color:#cccccc;border-bottom-width:2px;border-bottom-style:solid;padding:0px 4px 0px 0px;margin:0px 0px 10px;text-align:center;" class="ue_t">设置http自动跳转到https</h2><p><strong><span style="font-size:12px;">摘要</span></strong><span style="font-size:12px;" class="ue_t">：如何设置http自动跳转到https? 将所有来自http请求的转发到https<br/> </span></p><p><span style="font-size:12px;" class="ue_t"><br/> </span></p><p style="line-height:1.5em;"><strong>基础知识<br/> </strong></p><p style="text-indent:2em;"><span style="font-size:14px;">默认下: apache监听着80端口, https的监听着443端口, ssl.conf内有ssl模块的详细配置信息<br/> </span></p><p style="text-indent:2em;"><span style="font-size:14px;"><a href="http://www.zz-bin.cn:80" _src="http://www.zz-bin.cn:80">http://www.zz-bin.cn:80</a> &nbsp; &nbsp; &nbsp; &nbsp; <br/> </span></p><p style="text-indent:2em;"><span style="font-size:14px;"><a href="https://www.zz-bin.cn:443" _src="https://www.zz-bin.cn:443">https://www.zz-bin.cn:443</a><br/> </span></p><p style="text-indent:2em;"><span style="font-size:14px;">我之前有尝试将 博客系统单独的 独立出来, 在apahce内做个虚拟主机 ， 其实也算成功了. 只是 https 请求发送的时候 这两个请求对应的 目录不同， 在 ssl.conf 中有个 配置信息 DocumentRoot 即是指定 443端口进来后的目录.&nbsp; 默认和 apache设置的&nbsp; var/www/html 一样&nbsp; 这个配置也可以设置到 ..../html/blog 。 只是这样又发现了一个弊端, 因为自己服务器上也夹杂着各种奇怪的&nbsp; 实验应用&nbsp; 这样将目录写成blog 会出现很多问题 。 于是乎便放弃了<br/> </span></p><p style="text-indent:2em;"><span style="font-size:14px;"><br/> </span></p><p style="line-height:1.5em;"><strong>跳转</strong></p><p style="text-indent:2em;"><span style="font-size:14px;">apache环境下, http访问跳转到https 需要实现 url重定向：</span></p><p style="text-indent:2em;"><span style="font-size:14px;">因为我在很久前便完成了这一步, 而laravel也是需要rewrite&nbsp; 这边无法实时的更新便不写了</span></p><p style="text-indent:2em;"><span style="font-size:14px;">摘一段百度来的 信息 , 如有不会请百度<br/> </span></p><pre class="brush:html;toolbar:false">打开url重定向支持
+1）打开Apache/conf/httpd.conf，找到&nbsp;#LoadModule&nbsp;rewrite_module&nbsp;modules/mod_rewrite.so&nbsp;去掉#号
+2）找到你网站目录的&lt;Directory&gt;段，比如我的网站目录是c:/www，找到
+&lt;Directory&nbsp;“C:/www”&gt;
+…
+&lt;/Directory&gt;
+修改其中的&nbsp;AllowOverride&nbsp;None&nbsp;为&nbsp;AllowOverride&nbsp;All
+3）重启apache</pre><p style="text-indent:2em;"><span style="font-size:14px;"></span><br/> </p><p style="line-height:1.5em;"><strong>设置重定向规则<br/> </strong></p><p style="text-indent:2em;"><span style="font-size:14px;" class="ue_t">.htaccess 写过一点东西的人应该都知道这么一个文件, laravel项目下也会有</span></p><p style="text-indent:2em;"><span style="font-size:14px;" class="ue_t">在这个文件下 设置重定向规则</span></p><p style="text-indent:2em;"><span style="font-size:14px;" class="ue_t">. 打头的文件在linux下为隐藏文件,&nbsp; 在win下无法直接创建&nbsp; 这样名字不合法的文件</span></p><p style="text-indent:2em;"><span style="font-size:14px;" class="ue_t">win下的操作是&nbsp;&nbsp; 新建文本文档, 另存为 . 所有文件　名字为 .htaccess 即可</span></p><p style="text-indent:2em;"><span style="font-size:14px;" class="ue_t"><br/> </span></p><p style="text-indent:2em;"><span style="font-size:14px;" class="ue_t">编辑 .htaccess 写入如下规则（运用了正则）<br/> </span></p><pre class="brush:java;toolbar:false">&nbsp;&nbsp;&nbsp;&nbsp;RewriteEngine&nbsp;on
+&nbsp;&nbsp;&nbsp;&nbsp;RewriteCond&nbsp;%{SERVER_PORT}&nbsp;!^443$
+&nbsp;&nbsp;&nbsp;&nbsp;RewriteCond&nbsp;%{REQUEST_URI}&nbsp;!^/index.html
+&nbsp;&nbsp;&nbsp;&nbsp;RewriteRule&nbsp;(.*)&nbsp;https://%{SERVER_NAME}/$1&nbsp;[R]</pre><p style="text-indent:2em;"><span style="font-size:14px;" class="ue_t"></span>将 .htaccess 放在apache内的目录&nbsp; /var/www/html 下即可</p><p style="text-indent:2em;"><br/> </p><p style="text-indent:2em;">解释:</p><p style="text-indent:2em;">&nbsp;&nbsp;&nbsp; 如果访问的 url地址&nbsp;&nbsp; 不是443端口&nbsp; 或者&nbsp; 不是访问的 index.html&nbsp;&nbsp; 则应用 RewriteRule重写规则</p><p style="text-indent:2em;">这样便实现了&nbsp; 访问&nbsp;&nbsp; http:<a href="http://www.zz-bin.cn" _src="http://www.zz-bin.cn">www.zz-bin.cn</a>&nbsp; 会自动跳转到 &nbsp; <a href="https://www.zz-bin.cn" _src="https://www.zz-bin.cn">https://www.zz-bin.cn</a><br/> </p><p style="text-indent:2em;">而访问&nbsp; http:<a href="http://www.zz-bin.cn/index.html" _src="http://www.zz-bin.cn/index.html">www.zz-bin.cn/index.html</a>&nbsp; 则不会跳转&nbsp; 当然这个地址也可以使用　https访问 <br/> </p><p style="text-indent: 2em;"><br/> </p><p>&nbsp;&nbsp;&nbsp;&nbsp;End &nbsp;&nbsp;&nbsp; <br/> </p></p>
+
+            
+            
+            
+
+        </section>
+
+        <aside id="sidebar">
+            <blockquote class="route">关于我</blockquote>
+            <p>19本科毕业生，代码的搬运工，此界面灵感来自公众号【运维咖啡吧】</p>
+            
+            <blockquote class="route">Github地址</blockquote>
+            <a href="https://github.com/enjoy-binbin">
+                <img border="0" src="https://avatars2.githubusercontent.com/u/22811481" width="100%" height="100%" alt="enjoy-binbin"/>
+            </a>
+            
+            
+        </aside>
+    </div>
+</div>
+</body>
+
+</html>

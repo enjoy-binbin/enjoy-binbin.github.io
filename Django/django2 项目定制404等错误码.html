@@ -1,0 +1,109 @@
+
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta name="theme-color" content="#2879d0"/>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1"/>
+    <meta name="copyright" content="©2020 测试所有"/>
+    <link rel="stylesheet" href="/css/style.min.css" media="screen" type="text/css"/>
+
+    <!-- Begin SEO tag -->
+    <title>django2 项目定制404等错误码</title>
+    <meta property="og:locale" content="zh_CN"/>
+    <meta property="og:type" content="article"/>
+    <meta property="og:title" content="django2 项目定制404等错误码"/>
+    <meta property="og:description" content="django2 项目定制404等错误码"/>
+    <meta property="og:url" content="#"/>
+    <meta property="og:site_name" content="django2 项目定制404等错误码"/>
+    <meta name="description" content="django2 项目定制404等错误码"/>
+    <!-- End SEO tag -->
+</head>
+
+<body>
+<header>
+    <div class="inner">
+        <a href="/">
+            <h1>彬彬同学丶</h1>
+        </a>
+        <h2>Choose what you love,love what you choose.</h2>
+    </div>
+</header>
+
+<div id="content-wrapper">
+    <div class="inner clearfix">
+        <section id="main-content">
+        
+            
+                <h1 id="art-title">django2 项目定制404等错误码</h1>
+            
+            
+            
+                <h3>django2 项目定制404等错误码</h3>
+<p>文档地址：<code>https://docs.djangoproject.com/en/2.1/topics/http/views/#customizing-error-views</code></p>
+<h3>准备工作，要想要django显示404等错误页，需要关闭DEBUG模式</h3>
+<p>在settings.py里将调试模式关闭，以及设置可以访问的主机</p>
+<pre><code>DEBUG = False
+
+ALLOWED_HOSTS = ['*']
+</code></pre>
+<p>因为django默认对静态文件的处理，在上线模式是不会对静态文件进行处理的</p>
+<p>所以在运行项目的时候得使用 <code>python manage.py runserver --insecure</code>，这样就可以看到404页面了</p>
+<h3>使用</h3>
+<p>在blog.views(自定义哪个app下都可以)里编写如下代码：</p>
+<div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">django.shortcuts</span> <span class="kn">import</span> <span class="n">render</span>
+
+<span class="k">def</span> <span class="nf">permission_denied</span><span class="p">(</span><span class="n">request</span><span class="p">,</span> <span class="n">exception</span><span class="p">,</span> <span class="n">template_name</span><span class="o">=</span><span class="s1">&#39;blog/error_page.html&#39;</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot; 处理403错误码 &quot;&quot;&quot;</span>
+    <span class="n">error_msg</span> <span class="o">=</span> <span class="s1">&#39;403错误拉，没有权限访问当前页面，点击首页看看别的？&#39;</span>
+    <span class="k">return</span> <span class="n">render</span><span class="p">(</span><span class="n">request</span><span class="p">,</span> <span class="n">template_name</span><span class="p">,</span> <span class="p">{</span>
+        <span class="s1">&#39;error_msg&#39;</span><span class="p">:</span> <span class="n">error_msg</span><span class="p">,</span>
+    <span class="p">},</span> <span class="n">status</span><span class="o">=</span><span class="mi">403</span><span class="p">)</span>
+
+
+<span class="k">def</span> <span class="nf">page_not_found</span><span class="p">(</span><span class="n">request</span><span class="p">,</span> <span class="n">exception</span><span class="p">,</span> <span class="n">template_name</span><span class="o">=</span><span class="s1">&#39;blog/error_page.html&#39;</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot; 处理404错误码 &quot;&quot;&quot;</span>
+    <span class="n">url</span> <span class="o">=</span> <span class="n">request</span><span class="o">.</span><span class="n">get_full_path</span><span class="p">()</span>
+    <span class="n">error_msg</span> <span class="o">=</span> <span class="s1">&#39;404错误啦，访问的地址 &#39;</span> <span class="o">+</span> <span class="n">url</span> <span class="o">+</span> <span class="s1">&#39; 不存在。请点击首页看看别的？&#39;</span>
+    <span class="k">return</span> <span class="n">render</span><span class="p">(</span><span class="n">request</span><span class="p">,</span> <span class="n">template_name</span><span class="p">,</span> <span class="p">{</span>
+        <span class="s1">&#39;error_msg&#39;</span><span class="p">:</span> <span class="n">error_msg</span><span class="p">,</span>
+    <span class="p">},</span> <span class="n">status</span><span class="o">=</span><span class="mi">404</span><span class="p">)</span>
+
+
+<span class="k">def</span> <span class="nf">server_error</span><span class="p">(</span><span class="n">request</span><span class="p">,</span> <span class="n">template_name</span><span class="o">=</span><span class="s1">&#39;blog/error_page.html&#39;</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot; 处理500错误码 &quot;&quot;&quot;</span>
+    <span class="n">error_msg</span> <span class="o">=</span> <span class="s1">&#39;500错误啦，服务器出错，我已经收集到了错误信息，之后会抓紧抢修，请点击首页看看别的？&#39;</span>
+    <span class="k">return</span> <span class="n">render</span><span class="p">(</span><span class="n">request</span><span class="p">,</span> <span class="n">template_name</span><span class="p">,</span> <span class="p">{</span>
+        <span class="s1">&#39;error_msg&#39;</span><span class="p">:</span> <span class="n">error_msg</span><span class="p">,</span>
+    <span class="p">},</span> <span class="n">status</span><span class="o">=</span><span class="mi">500</span><span class="p">)</span>
+</pre></div>
+<p>urls.py路由文件下的配置：</p>
+<div class="highlight"><pre><span></span><span class="c1"># 添加如下代码，和前面所写的方法对应即可</span>
+<span class="n">handler403</span> <span class="o">=</span> <span class="s1">&#39;blog.views.permission_denied&#39;</span>
+<span class="n">handler404</span> <span class="o">=</span> <span class="s1">&#39;blog.views.page_not_found&#39;</span>
+<span class="n">handler500</span> <span class="o">=</span> <span class="s1">&#39;blog.views.server_error&#39;</span>
+</pre></div>
+<p>模板文件error_page.html就是简单的展示你的 error_msg即可，跟其他模板文件一样的编写方式</p>
+
+            
+            
+            
+
+        </section>
+
+        <aside id="sidebar">
+            <blockquote class="route">关于我</blockquote>
+            <p>19本科毕业生，代码的搬运工，此界面灵感来自公众号【运维咖啡吧】</p>
+            
+            <blockquote class="route">Github地址</blockquote>
+            <a href="https://github.com/enjoy-binbin">
+                <img border="0" src="https://avatars2.githubusercontent.com/u/22811481" width="100%" height="100%" alt="enjoy-binbin"/>
+            </a>
+            
+            
+        </aside>
+    </div>
+</div>
+</body>
+
+</html>

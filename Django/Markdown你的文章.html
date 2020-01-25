@@ -1,0 +1,130 @@
+
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta name="theme-color" content="#2879d0"/>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1"/>
+    <meta name="copyright" content="©2020 测试所有"/>
+    <link rel="stylesheet" href="/css/style.min.css" media="screen" type="text/css"/>
+
+    <!-- Begin SEO tag -->
+    <title>Markdown你的文章</title>
+    <meta property="og:locale" content="zh_CN"/>
+    <meta property="og:type" content="article"/>
+    <meta property="og:title" content="Markdown你的文章"/>
+    <meta property="og:description" content="Markdown你的文章"/>
+    <meta property="og:url" content="#"/>
+    <meta property="og:site_name" content="Markdown你的文章"/>
+    <meta name="description" content="Markdown你的文章"/>
+    <!-- End SEO tag -->
+</head>
+
+<body>
+<header>
+    <div class="inner">
+        <a href="/">
+            <h1>彬彬同学丶</h1>
+        </a>
+        <h2>Choose what you love,love what you choose.</h2>
+    </div>
+</header>
+
+<div id="content-wrapper">
+    <div class="inner clearfix">
+        <section id="main-content">
+        
+            
+                <h1 id="art-title">Markdown你的文章</h1>
+            
+            
+            
+                <pre><code>markdown越来越流行, 在博客网站上集成markdown
+</code></pre>
+<h3>在admin后台编辑详情页里，给博客文章content加上markdown</h3>
+<p>查看我那篇关于admin设置的笔记文章吧。</p>
+<h3>markdown你的博文</h3>
+<p>新建一个py文件，在后面用于引入。我是放在 utils目录下的</p>
+<div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">mistune</span>
+<span class="kn">from</span> <span class="nn">pygments</span> <span class="kn">import</span> <span class="n">highlight</span>
+<span class="kn">from</span> <span class="nn">pygments.lexers</span> <span class="kn">import</span> <span class="n">get_lexer_by_name</span>
+<span class="kn">from</span> <span class="nn">pygments.formatters</span> <span class="kn">import</span> <span class="n">html</span>
+
+
+<span class="c1"># The fastest markdown parser in pure Python with renderer features, inspired by marked.</span>
+<span class="c1"># https://github.com/lepture/mistune</span>
+
+<span class="k">class</span> <span class="nc">ArticleRenderer</span><span class="p">(</span><span class="n">mistune</span><span class="o">.</span><span class="n">Renderer</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot; 对文章进行 markdown显示，和 代码高亮 &quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="nf">block_code</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">code</span><span class="p">,</span> <span class="n">lang</span><span class="o">=</span><span class="bp">None</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Rendering block level code. ``pre &gt; code``.</span>
+
+<span class="sd">        :param code: text content of the code block.</span>
+<span class="sd">        :param lang: language of the given code.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">code</span> <span class="o">=</span> <span class="n">code</span><span class="o">.</span><span class="n">rstrip</span><span class="p">(</span><span class="s1">&#39;</span><span class="se">\n</span><span class="s1">&#39;</span><span class="p">)</span>  <span class="c1"># 去掉尾部的换行符</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">lang</span><span class="p">:</span>
+            <span class="n">code</span> <span class="o">=</span> <span class="n">mistune</span><span class="o">.</span><span class="n">escape</span><span class="p">(</span><span class="n">code</span><span class="p">)</span>
+            <span class="k">return</span> <span class="s1">&#39;&lt;pre&gt;&lt;code&gt;</span><span class="si">%s</span><span class="se">\n</span><span class="s1">&lt;/code&gt;&lt;/pre&gt;</span><span class="se">\n</span><span class="s1">&#39;</span> <span class="o">%</span> <span class="n">code</span>
+
+        <span class="c1"># 给代码加上高亮  例如: lang=&#39;python&#39;的话</span>
+        <span class="c1"># ```python</span>
+        <span class="c1">#   print(&#39;666&#39;)</span>
+        <span class="c1">#</span>
+</pre></div>
+<pre><code>    lexer = get_lexer_by_name(lang, stripall=True)
+    formatter = html.HtmlFormatter()
+    return highlight(code, lexer, formatter)
+</code></pre>
+<p>def article_markdown(text):
+    """ 对传入的text文本进行markdown """
+    renderer = ArticleRenderer()
+    markdown = mistune.Markdown(renderer=renderer)
+    return markdown(text)</p>
+<pre><code>
+
+
+在blog_tags.py里自定义一个过滤器，在模板文件里对文章进行markdown
+
+```python
+from django.template.defaultfilters import stringfilter
+from django import template
+
+from utils.mistune_markdown import article_markdown as _article_markdown
+
+register = template.Library()  # 名字是固定的register
+
+@register.filter(is_safe=True)
+@stringfilter
+def article_markdown(text):
+    """ 给文章加上 markdown支持 和 代码高亮 """
+    return mark_safe(_article_markdown(text))
+</code></pre>
+<p>模板文件里面调用方式:   ( truncatechars_html过滤器是 django自带的可以用来截取html)</p>
+<p>在列表页就截取部分长度的内容，而在文章详情页就不用截取</p>
+<pre><code>{{ article.content|article_markdown|truncatechars_html:250 }}
+</code></pre>
+
+            
+            
+            
+
+        </section>
+
+        <aside id="sidebar">
+            <blockquote class="route">关于我</blockquote>
+            <p>19本科毕业生，代码的搬运工，此界面灵感来自公众号【运维咖啡吧】</p>
+            
+            <blockquote class="route">Github地址</blockquote>
+            <a href="https://github.com/enjoy-binbin">
+                <img border="0" src="https://avatars2.githubusercontent.com/u/22811481" width="100%" height="100%" alt="enjoy-binbin"/>
+            </a>
+            
+            
+        </aside>
+    </div>
+</div>
+</body>
+
+</html>

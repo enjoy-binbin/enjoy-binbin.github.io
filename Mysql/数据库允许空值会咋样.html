@@ -1,0 +1,125 @@
+
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta name="theme-color" content="#2879d0"/>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1"/>
+    <meta name="copyright" content="©2020 测试所有"/>
+    <link rel="stylesheet" href="/css/style.min.css" media="screen" type="text/css"/>
+
+    <!-- Begin SEO tag -->
+    <title>数据库允许空值会咋样</title>
+    <meta property="og:locale" content="zh_CN"/>
+    <meta property="og:type" content="article"/>
+    <meta property="og:title" content="数据库允许空值会咋样"/>
+    <meta property="og:description" content="数据库允许空值会咋样"/>
+    <meta property="og:url" content="#"/>
+    <meta property="og:site_name" content="数据库允许空值会咋样"/>
+    <meta name="description" content="数据库允许空值会咋样"/>
+    <!-- End SEO tag -->
+</head>
+
+<body>
+<header>
+    <div class="inner">
+        <a href="/">
+            <h1>彬彬同学丶</h1>
+        </a>
+        <h2>Choose what you love,love what you choose.</h2>
+    </div>
+</header>
+
+<div id="content-wrapper">
+    <div class="inner clearfix">
+        <section id="main-content">
+        
+            
+                <h1 id="art-title">数据库允许空值会咋样</h1>
+            
+            
+            
+                <p>在进行数据库设计的时候，是否允许空值需要结合业务场景使用，更多是不允许有空值，都需要设置个默认值，但是在一些数据产品例子中，对于null值，就是不存在，0就是数据中的0，具体场景具体分析使用。</p>
+<p>数据库字段允许空值，会遇到一些问题，下面就这些问题来进行记录</p>
+<p><em>Base on Mysql5.7</em></p>
+<p><strong>数据准备：</strong></p>
+<p>说明：id为普通索引，非唯一（non unique），允许空（null）</p>
+<div class="highlight"><pre><span></span><span class="k">create</span> <span class="k">table</span> <span class="nf">user</span> <span class="p">(</span>
+    <span class="n">id</span> <span class="kt">int</span><span class="p">,</span>
+    <span class="n">name</span> <span class="kt">varchar</span><span class="p">(</span><span class="mi">20</span><span class="p">),</span>
+    <span class="k">index</span><span class="p">(</span><span class="n">id</span><span class="p">)</span>
+<span class="p">)</span><span class="kp">engine</span><span class="o">=</span><span class="n">innodb</span><span class="p">;</span>
+
+<span class="k">insert</span> <span class="k">into</span> <span class="n">user</span> <span class="k">values</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span><span class="s1">&#39;张三&#39;</span><span class="p">);</span>
+<span class="k">insert</span> <span class="k">into</span> <span class="n">user</span> <span class="k">values</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span><span class="s1">&#39;李四&#39;</span><span class="p">);</span>
+<span class="k">insert</span> <span class="k">into</span> <span class="n">user</span> <span class="k">values</span><span class="p">(</span><span class="mi">3</span><span class="p">,</span><span class="s1">&#39;王五&#39;</span><span class="p">);</span>
+</pre></div>
+<p>在进行数据库设计的时候，是否允许空值需要结合业务场景使用，更多是不允许有空值，都需要设置个默认值，但是在一些数据产品例子中，对于null值，就是不存在，0就是数据中的0，具体场景具体分析使用。</p>
+<p>数据库字段允许空值，会遇到一些问题，下面就这些问题来进行记录</p>
+<p>数据库字段允许空值，会遇到一些问题，此处包含的一些知识点，和大家聊一聊。</p>
+<p><strong>数据准备：</strong></p>
+<p>说明：id为普通索引，非唯一（non unique），允许空（null）</p>
+<p><strong>知识点1（补充）：负向查询是无法命中索引的，会走全表扫描</strong></p>
+<div class="highlight"><pre><span></span><span class="k">create</span> <span class="k">table</span> <span class="nf">user</span> <span class="p">(</span>
+    <span class="n">id</span> <span class="kt">int</span><span class="p">,</span>
+    <span class="n">name</span> <span class="kt">varchar</span><span class="p">(</span><span class="mi">20</span><span class="p">),</span>
+    <span class="k">index</span><span class="p">(</span><span class="n">id</span><span class="p">)</span>
+<span class="p">)</span><span class="kp">engine</span><span class="o">=</span><span class="n">innodb</span><span class="p">;</span>
+
+<span class="k">insert</span> <span class="k">into</span> <span class="n">user</span> <span class="k">values</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span><span class="s1">&#39;张三&#39;</span><span class="p">);</span>
+<span class="k">insert</span> <span class="k">into</span> <span class="n">user</span> <span class="k">values</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span><span class="s1">&#39;李四&#39;</span><span class="p">);</span>
+<span class="k">insert</span> <span class="k">into</span> <span class="n">user</span> <span class="k">values</span><span class="p">(</span><span class="mi">3</span><span class="p">,</span><span class="s1">&#39;王五&#39;</span><span class="p">);</span>
+</pre></div>
+<p><img src="/media/editor/数据库允许空值-1.png" alt=""></p>
+<p>索引字段id上的不等于查询，explain如上图所示：</p>
+<p>（1）type=ALL，全表扫描；（2）rows=3，全表只有3行；</p>
+<p><strong>知识点2：空值在不等于（!=）查询条件下，可能会导致不符合预期的结果。</strong></p>
+<p>首先是插入多一条数据，id为null值，这时我们想查询id不为1的所有用户，where id != 1 ，会有几条记录？</p>
+<p><img src="/media/editor/数据库允许空值-2.png" alt=""></p>
+<p>猜测结果集有几条记录？一共四条，除去不等于的一条，是还有三条吧。错辽！</p>
+<p>结果集只有两条记录，空值记录是不会出现在结果集里的。而想获得预期的结果集，必须得加多个or查询条件</p>
+<p><img src="/media/editor/数据库允许空值-3.png" alt=""></p>
+<p><strong>知识点3：某些or条件，可能会导致全表扫描，此时应该优化为union</strong></p>
+<p>索引字段id上的等值查询，能命中索引</p>
+<p>（1）type=ref，走非唯一索引；（2）rows=1，预估扫描1行；</p>
+<p><img src="/media/editor/数据库允许空值-4.png" alt=""></p>
+<p>索引字段id上的null查询，也能命中索引</p>
+<p>（1）type=ref，走非唯一索引；（2）rows=1，预估扫描1行；</p>
+<p><img src="/media/editor/数据库允许空值-5.png" alt=""></p>
+<p>如果放到一个sql语句中用or查询，则会全表扫描</p>
+<p>（1）type=ALL，全表扫描；（2）rows=4，全表只有4行；</p>
+<p><img src="/media/editor/数据库允许空值-6.png" alt=""></p>
+<p>此时对于这条语句，应该优化为union查询，就能够继续命中索引了</p>
+<p>（1）type=ref，走非唯一索引；（2）rows=1，预估扫描1行；</p>
+<p>（3）第三行的临时表的ALL，是两次结果集的合并</p>
+<p><img src="/media/editor/数据库允许空值-7.png" alt=""></p>
+<p><strong>总结：</strong></p>
+<p>（1）<strong>负向比较</strong>（例如：!=）不会走索引，会引发<strong>全表扫描</strong>；</p>
+<p>（2）如果允许空值，<strong>不等于(!=)的查询，是不会将空值行(row)包含进来的</strong>，此时的结果集往往是不符合预期的，此时要加上一个or条件，把空值(is null)结果包含进来，才会得到最后预期的结果集；</p>
+<p>（3）or可能会导致全表扫描，此时可以用union将结果集合并优化，就能使用到索引；</p>
+<p>（4）建表时加上<strong>默认(default)值</strong>，这样能避免空值的坑；</p>
+<p>（5）善用<strong>explain</strong>；</p>
+<p>课外阅读：58沈剑（架构师之路），参考有修改</p>
+
+            
+            
+            
+
+        </section>
+
+        <aside id="sidebar">
+            <blockquote class="route">关于我</blockquote>
+            <p>19本科毕业生，代码的搬运工，此界面灵感来自公众号【运维咖啡吧】</p>
+            
+            <blockquote class="route">Github地址</blockquote>
+            <a href="https://github.com/enjoy-binbin">
+                <img border="0" src="https://avatars2.githubusercontent.com/u/22811481" width="100%" height="100%" alt="enjoy-binbin"/>
+            </a>
+            
+            
+        </aside>
+    </div>
+</div>
+</body>
+
+</html>

@@ -1,0 +1,183 @@
+
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta name="theme-color" content="#2879d0"/>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1"/>
+    <meta name="copyright" content="©2020 测试所有"/>
+    <link rel="stylesheet" href="/css/style.min.css" media="screen" type="text/css"/>
+
+    <!-- Begin SEO tag -->
+    <title>InnoDB隔离性和隔离级别</title>
+    <meta property="og:locale" content="zh_CN"/>
+    <meta property="og:type" content="article"/>
+    <meta property="og:title" content="InnoDB隔离性和隔离级别"/>
+    <meta property="og:description" content="InnoDB隔离性和隔离级别"/>
+    <meta property="og:url" content="#"/>
+    <meta property="og:site_name" content="InnoDB隔离性和隔离级别"/>
+    <meta name="description" content="InnoDB隔离性和隔离级别"/>
+    <!-- End SEO tag -->
+</head>
+
+<body>
+<header>
+    <div class="inner">
+        <a href="/">
+            <h1>彬彬同学丶</h1>
+        </a>
+        <h2>Choose what you love,love what you choose.</h2>
+    </div>
+</header>
+
+<div id="content-wrapper">
+    <div class="inner clearfix">
+        <section id="main-content">
+        
+            
+                <h1 id="art-title">InnoDB隔离性和隔离级别</h1>
+            
+            
+            
+                <p>提到事务，你肯定会想到ACID（Atomicity、Consistency、Isolation、Durability，即原子性、一致性、隔离性、持久性），今天我们就来说说其中I，也就是“隔离性”。</p>
+<p><strong>什么是事务的隔离性？</strong></p>
+<p>隔离性是指，多个用户的并发事务访问同一个数据库时，一个用户的事务不应该被其他用户的事务干扰，多个并发事务之间要相互隔离。不同事务的隔离级别，实际上是一致性与并发性的一个权衡与折衷。</p>
+<p>当数据库上有多个事务同时执行的时候，就可能出现脏读（dirty read）、不可重复读（non-repeatable read）、幻读（phantom read）的问题，为了解决这些问题，就有了“隔离级别”的概念。</p>
+<p><strong>一个事务怎么会干扰其他事务呢？</strong></p>
+<p>咱们举例子来说明，假设有一个InnoDB表：</p>
+<p>t(id PK, name);</p>
+<p>表中有两条记录：</p>
+<p>1, Luck</p>
+<p>2, Tim</p>
+<hr>
+<p><strong>case 1</strong></p>
+<p>事务A，先执行，处于未提交的状态：</p>
+<p>insert into t values(3, Kate);</p>
+<p>事务B，后执行，也未提交：</p>
+<p>select * from t;</p>
+<p>如果事务B能够读取到(3, Kate)这条记录，说明事务A就对事务B产生了影响，产生了脏读，事务B读到了事务A未提交事务操作的记录。</p>
+<hr>
+<p><strong>case 2</strong></p>
+<p>事务A，先执行：</p>
+<p>select * from t where id=1;</p>
+<p>结果集为：(1, Luck)</p>
+<p>事务B，后执行，并且提交：</p>
+<p>update t set name='Damon' where id=1;</p>
+<p>commit;</p>
+<p>事务A，再次执行相同的查询的时候，读到不一样的结果：</p>
+<p>select * from t where id=1;</p>
+<p>结果集为：(1, Damon)</p>
+<p>这次是已提交事务B对事务A产生的影响，这个影响叫做“不可重复读”，一个事务内相同的查询，得到了不同的结果。</p>
+<hr>
+<p><strong>case 3</strong></p>
+<p>事务A，先执行：</p>
+<p>select * from t where id&gt;2;</p>
+<p>结果集为：空</p>
+<p>事务B，后执行，并且提交：</p>
+<p>insert into t values(3, 'Tom');</p>
+<p>commit;</p>
+<p>事务A，首次查询了id&gt;2的结果为空，于是想插入一条id为3的记录：</p>
+<p>insert into t values(3, 'Pete');</p>
+<p>结果集为：Error : duplicate key!</p>
+<p>事务A的内心OS（overlapping sound）是：你TM在逗我，查了id=3是空的，插入不给插</p>
+<p>这次是已提交事务B对事务A产生的影响，产生了幻读。</p>
+<p>幻读指的是一个事务在前后两次查询同一个范围的时候，后一次查询看到了前一次查询没有看到的行。</p>
+<p>在可重复读隔离级别下，普通的查询是快照读，是不会看到别的事务插入的数据的。因此，幻读在“当前读”下才会出现。幻读仅专指“新插入的行”。</p>
+<p>为了解决幻读问题，InnoDB只好引入新的锁，也就是间隙锁(Gap Lock)。</p>
+<hr>
+<p>可以看到，并发的事务可能导致其他事务产生下面的问题：</p>
+<ul>
+<li>脏读（dirty read）</li>
+<li>不可重复读（non-repeatable read）</li>
+<li>幻读（phantom read）</li>
+</ul>
+<p>为了解决这些问题，就有了 “隔离级别” 的概念</p>
+<p><strong>InnoDB实现了哪几种事务的隔离级别？</strong></p>
+<p>按照SQL92标准，InnoDB实现了四种不同事务的隔离级别：</p>
+<ul>
+<li>读未提交(Read Uncommitted)</li>
+<li>读提交(Read Committed, RC)</li>
+<li>可重复读(Repeated Read, RR)</li>
+<li>串行化(Serializable)</li>
+</ul>
+<p>在谈隔离级别之前，你首先要知道，你隔离得越严实，效率就会越低。因此很多时候，我们都要在二者之间寻找一个平衡点。</p>
+<ul>
+<li>读未提交是指，一个事务还没提交时，它做的变更就能被别的事务看到。</li>
+<li>读提交是指，一个事务提交之后，它做的变更才会被其他事务看到。</li>
+<li>可重复读是指，一个事务执行过程中看到的数据，总是跟这个事务在启动时看到的数据是一致的。当然在可重复读隔离级别下，未提交变更对其他事务也是不可见的。</li>
+<li>串行化，顾名思义是对于同一行记录，“写”会加“写锁”，“读”会加“读锁”。当出现读写锁冲突的时候，后访问的事务必须等前一个事务执行完成，才能继续执行。</li>
+</ul>
+<p>不同事务的隔离级别，实际上是一致性与并发性的一个权衡与折衷。</p>
+<p>InnoDB使用不同的<strong>锁策略(Locking Strategy)</strong>来实现不同的隔离级别。</p>
+<p>查看隔离级别：mysql&gt; show variables like 'transaction_isolation';</p>
+<p>修改隔离级别：mysql&gt; set global transaction isolation level read committed;</p>
+<p><strong>一，读未提交(Read Uncommitted)</strong></p>
+<p>读未提交（read uncommitted）是指，一个事务还没提交时，它做的变更就能被别的事务看到。</p>
+<p><em>别人改数据的事务尚未提交，我在我的事务中也能读到。</em></p>
+<p>这种事务隔离级别下，select语句不加锁。</p>
+<p><em>画外音：官方的说法是 SELECT statements are performed in a nonlocking fashion.</em></p>
+<p>此时，可能读取到不一致的数据，即“脏读”。这是并发最高，一致性最差的隔离级别。</p>
+<p><strong>二，串行化(Serializable)</strong></p>
+<p>串行化（serializable），顾名思义是对于同一行记录，“写”会加“写锁”，“读”会加“读锁”。当出现读写锁冲突的时候，后访问的事务必须等前一个事务执行完成，才能继续执行。</p>
+<p><em>我的事务尚未提交，别人就别想改数据。</em></p>
+<p>这种事务的隔离级别下，所有select语句都会被隐式的转化为select ... in share mode.</p>
+<p>这可能导致，如果有未提交的事务正在修改某些行，所有读取这些行的select都会被阻塞住。</p>
+<p><em>画外音：官方的说法是 To force a plain SELECT to block if other transactions have modified the selected rows.</em></p>
+<p>这是一致性最好的，但并发性最差的隔离级别。</p>
+<p>在互联网大数据量，高并发量的场景下，几乎<strong>不会使用</strong>上述两种隔离级别。</p>
+<p><strong>三，可重复读(Repeated Read, RR)</strong></p>
+<p>可重复读（repeatable read）是指，一个事务执行过程中看到的数据，总是跟这个事务在启动时看到的数据是一致的。当然在可重复读隔离级别下，未提交变更对其他事务也是不可见的。</p>
+<p><em>别人改数据的事务已经提交，我在我的事务中也不去读。</em></p>
+<p>这是InnoDB默认的隔离级别，在RR可重复读隔离级别下：</p>
+<p>(1)普通的select使用快照读(snapshot read)，这是一种不加锁的一致性读(Consistent Nonlocking Read)，底层使用MVCC（多版本并发控制）来实现的；</p>
+<p>(2)加锁的select(select ... in share mode / select ... for update), update, delete等语句使用的是当前读（会读取最新的记录），它们的锁，依赖于它们是否在唯一索引(unique index)上使用了唯一的查询条件(unique search condition)，或者范围查询条件(range-type search condition)：</p>
+<ul>
+<li><strong>在唯一索引上使用唯一的查询条件</strong>，会使用记录锁(record lock 行锁)，而不会封锁记录之间的间隔，即不会使用间隙锁(gap lock)与临键锁(next-key lock)</li>
+<li><strong>范围查询条件</strong>，会使用间隙锁(gap lock)与临键锁(next-key lock)，next-key lock是前开后闭区间，锁住索引记录之间的范围，避免范围间插入记录，以避免产生幻读，以及避免不可重复的读</li>
+</ul>
+<p><em>画外音：InnoDB的细粒度锁，是实现在索引记录上的。上诉锁其实是加在索引树上的</em></p>
+<p>对于锁的更多介绍，将在另外一篇笔记上记录。</p>
+<p><img src="/media/editor/InnoDB隔离性和隔离级别-1.png" alt=""></p>
+<p><strong>四，读提交Read Committed, RC)</strong></p>
+<p>读提交（read committed）是指，一个事务提交之后，它做的变更才会被其他事务看到。</p>
+<p><em>别人改数据的事务已经提交，我在我的事务中才能读到。</em></p>
+<p>这是互联网最常用的隔离级别，在RC读提交隔离级别下：</p>
+<p>(1)普通读是快照读(snapshot read)，基于MVCC实现的多版本并发控制；</p>
+<p>(2)加锁的select, update, delete等语句，除了在外键约束检查(foreign-key constraint checking)以及重复键检查(duplicate-key checking)时会封锁区间，其他时刻都只使用记录锁；</p>
+<p>此时，其他事务的插入依然可以执行，就可能导致幻读，注意：幻读仅专指“新插入的行”。</p>
+<p><img src="/media/editor/InnoDB隔离性和隔离级别-2.png" alt=""></p>
+<p><strong>总结</strong></p>
+<ul>
+<li>并发事务之间相互干扰，可能导致事务出现读脏，不可重复度，幻读等问题</li>
+<li>InnoDB实现了SQL92标准中的四种隔离级别</li>
+</ul>
+<p>(1)<strong>读未提交</strong>：select不加锁，可能出现脏读；</p>
+<p>(2)<strong>读提交(RC)</strong>：普通select快照读，锁select /update /delete 会使用当前读 记录锁，可能出现不可重复读；</p>
+<p>(3)<strong>可重复读(RR)</strong>：普通select快照读，锁select /update /delete 根据查询条件情况，会选择记录锁，或者间隙锁/临键锁，以防止读取到幻影记录；</p>
+<p>(4)<strong>串行化</strong>：select隐式转化为select ... in share mode，会被update与delete互斥；</p>
+<ul>
+<li>InnoDB默认的隔离级别是RR，用得最多的隔离级别是RC</li>
+</ul>
+
+            
+            
+            
+
+        </section>
+
+        <aside id="sidebar">
+            <blockquote class="route">关于我</blockquote>
+            <p>19本科毕业生，代码的搬运工，此界面灵感来自公众号【运维咖啡吧】</p>
+            
+            <blockquote class="route">Github地址</blockquote>
+            <a href="https://github.com/enjoy-binbin">
+                <img border="0" src="https://avatars2.githubusercontent.com/u/22811481" width="100%" height="100%" alt="enjoy-binbin"/>
+            </a>
+            
+            
+        </aside>
+    </div>
+</div>
+</body>
+
+</html>

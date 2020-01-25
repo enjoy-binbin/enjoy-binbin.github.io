@@ -1,0 +1,64 @@
+
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta name="theme-color" content="#2879d0"/>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1"/>
+    <meta name="copyright" content="©2020 测试所有"/>
+    <link rel="stylesheet" href="/css/style.min.css" media="screen" type="text/css"/>
+
+    <!-- Begin SEO tag -->
+    <title>Centos下nginx+uswgi部署博客系统</title>
+    <meta property="og:locale" content="zh_CN"/>
+    <meta property="og:type" content="article"/>
+    <meta property="og:title" content="Centos下nginx+uswgi部署博客系统"/>
+    <meta property="og:description" content="Centos下nginx+uswgi部署博客系统"/>
+    <meta property="og:url" content="#"/>
+    <meta property="og:site_name" content="Centos下nginx+uswgi部署博客系统"/>
+    <meta name="description" content="Centos下nginx+uswgi部署博客系统"/>
+    <!-- End SEO tag -->
+</head>
+
+<body>
+<header>
+    <div class="inner">
+        <a href="/">
+            <h1>彬彬同学丶</h1>
+        </a>
+        <h2>Choose what you love,love what you choose.</h2>
+    </div>
+</header>
+
+<div id="content-wrapper">
+    <div class="inner clearfix">
+        <section id="main-content">
+        
+            
+                <h1 id="art-title">Centos下nginx+uswgi部署博客系统</h1>
+            
+            
+            
+                <p># linux下安装python3<br/>mkdir /usr/local/python3<br/><br/>wget https://www.python.org/ftp/python/3.6.0/Python-3.6.0.tgz<br/>tar -zxvf Python-3.6.0.tgz<br/><br/><br/>./configure --prefix=/usr/local/python3<br/><br/>make &amp;&amp; make install<br/><br/># python链接文件路径<br/>cd /usr/bin<br/>ls | grep python<br/>mv /usr/bin/python /usr/bin/python2<br/><br/># 建立新的链接文件<br/>ln -s /usr/local/python3/bin/python3 /usr/bin/python<br/>ln -s /usr/local/python3/bin/python3 /usr/bin/python3<br/><br/><br/><br/># 安装pip<br/>curl https://bootstrap.pypa.io/get-pip.py -o get-pip.py<br/>python get-pip.py&nbsp; # 仔细看最后的输出信息，可能会需要再执行一次<br/><br/># 创建pip的链接文件<br/>cd /usr/local/python3/bin<br/>./pip list<br/>ln -s /usr/local/python3/bin/pip /usr/bin/pip<br/><br/><br/># 安装虚拟环境 virtualenv和virtualenvwrapper<br/># 注意看最后的输出信息，看它是安装到哪了<br/># 默认是会安装到 环境变量 python 当前python版本文件夹下的bin<br/>pip install virtualenv<br/>pip install virtualenvwrapper<br/><br/># 创建用来存放虚拟环境的文件夹<br/># 将下面两行加入 ~/.bashrc 这个文件<br/>export WORKON_HOME=$HOME/Envs<br/>source /usr/local/python3/bin/virtualenvwrapper.sh<br/><br/><br/>source ~/.bashrc<br/>ln -s /usr/local/python3/bin/virtualenv /usr/bin/virtualenv<br/><br/># 创建虚拟环境<br/>mkvirtualenv pyblog<br/><br/><br/># 显示或切换虚拟环境<br/>workon [envName]<br/><br/># 删除虚拟环境<br/>rmvirtualenv [envName]<br/><br/># 离开虚拟环境<br/>deactivate<br/><br/><br/><br/># 解决yum问题<br/># 因为yum是依赖python，升级python后yum会出错<br/># 修改第一行，将其解释器路径设置为python2<br/>vi /usr/bin/yum<br/><br/><br/><br/><br/><br/><br/><br/><br/><br/><br/><br/><br/><br/>################################################################<br/># 部署django-blog<br/>mkvirtualenv pyblog<br/>workon pyblog<br/><br/># 安装依赖<br/>pip install -i https://pypi.douban.com/simple django==1.9.8<br/>yum install mysql-devel<br/>pip install -i https://pypi.douban.com/simple mysqlclient<br/>pip install pillow<br/>pip install django-import-export==1.0.0<br/>pip install future==0.15.2<br/>pip install six==1.10.0<br/>pip install django-crispy-forms==1.6.1<br/>pip install django-formtools<br/>pip install httplib2<br/><br/># 在xadmin中集成富文本编辑器 DjangoUeditor<br/># pypi或者github下下载源码进行pip安装<br/># 或者直接拷贝文件夹到python环境中&nbsp; ~/Envs/pyblog/lib/python3.6/site-packages<br/># 在settings里注册app<br/># 使用方法 github.com/zhangfisher/DjangoUeditor<br/><br/># 这边安装这个的时候报了个编码错误<br/>pip install django-pure-pagination<br/># 修改centos系统编码<br/>vim /etc/locale.conf<br/>&nbsp;&nbsp; &nbsp;LANG=&quot;en_US.UTF-8&quot;<br/>source /etc/locale.conf<br/>locale<br/># 配置好最后logout一下<br/><br/># 用django内置的服务器启动django&nbsp; (8002端口)<br/>python manage.py migrate<br/>python manage.py runserver 0.0.0.0:8002<br/><br/># 访问 外网:8002<br/># 配置项目settings<br/>ALLOWED_HOSTS = [&#39;*&#39;]<br/><br/># 移植本地数据库<br/># 因为原先我在本地win10环境上已经完成<br/>#####################################################################<br/><br/><br/><br/><br/>################################################################<br/># 使用 uwsgi启动django (8001端口)<br/>&nbsp;&nbsp; &nbsp;pip install uwsgi<br/><br/># 编写测试文件<br/>&nbsp;&nbsp; &nbsp;vim test.py<br/><br/>&nbsp;&nbsp; &nbsp;def application(env, start_response):<br/>&nbsp;&nbsp; &nbsp;&nbsp;&nbsp; &nbsp;start_response(&#39;200 OK&#39;, [(&#39;Content-Type&#39;,&#39;text/html&#39;)])<br/>&nbsp;&nbsp; &nbsp;&nbsp;&nbsp; &nbsp;return [b&quot;Hello World&quot;]<br/><br/>&nbsp;&nbsp;&nbsp; uwsgi --http :8001 --wsgi-file test.py<br/><br/># 在项目根目录下 blogpy下创建 uwsgi配置文件<br/>vim blogpy_uwsgi.ini<br/>&nbsp;&nbsp; &nbsp;# blogpy_uwsgi.ini file<br/>&nbsp;&nbsp; &nbsp;[uwsgi]<br/><br/>&nbsp;&nbsp; &nbsp;# Django-related settings<br/><br/>&nbsp;&nbsp; &nbsp;# 让uWSGI作为单独的web-server时，用http<br/>&nbsp;&nbsp; &nbsp;# 当配置 nginx+ uwsgi时，用socket<br/>&nbsp;&nbsp; &nbsp;http = :8001<br/>&nbsp;&nbsp; &nbsp;#socket = :8001<br/><br/>&nbsp;&nbsp; &nbsp;# the base directory (full path)<br/>&nbsp;&nbsp; &nbsp;chdir&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; = /var/www/html_py/blogpy<br/><br/>&nbsp;&nbsp; &nbsp;# Django s wsgi file&nbsp; 项目目录下的wsgi文件<br/>&nbsp;&nbsp; &nbsp;module&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; = blogpy.wsgi<br/><br/>&nbsp;&nbsp; &nbsp;# process-related settings<br/>&nbsp;&nbsp; &nbsp;# master<br/>&nbsp;&nbsp; &nbsp;master&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; = true<br/><br/>&nbsp;&nbsp; &nbsp;# maximum number of worker processes<br/>&nbsp;&nbsp; &nbsp;processes&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; = 4<br/><br/>&nbsp;&nbsp; &nbsp;# ... with appropriate permissions - may be needed<br/>&nbsp;&nbsp; &nbsp;# chmod-socket&nbsp;&nbsp;&nbsp; = 664<br/>&nbsp;&nbsp; &nbsp;# clear environment on exit<br/>&nbsp;&nbsp; &nbsp;vacuum&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; = true<br/><br/><br/><br/># 在项目目录下，用配置文件启动 uwsgi<br/>workon pyblog<br/>uwsgi --ini /var/www/html_py/blogpy/blogpy_uwsgi.ini<br/>killall -9 uwsgi<br/># 然后使用 127.0.0.1:8001 (根据自己上面配置的端口)<br/>#############################################################<br/><br/><br/>TODO:<br/>##############################################################<br/># 配置nginx+uwsgi<br/><br/># 关闭nginx&nbsp; 重启reload<br/>/usr/local/nginx/sbin/nginx -s stop<br/><br/># 设置blogpy_uwsgi.ini配置文件, 设置为socket<br/>&nbsp;&nbsp; &nbsp;socket = :8001<br/># 启动 uwsgi<br/>&nbsp;&nbsp; &nbsp;workon pyblog<br/>&nbsp;&nbsp; &nbsp;uwsgi --ini /var/www/html_py/blogpy/blogpy_uwsgi.ini<br/><br/># 修改nginx的配置文件 (/usr/local/nginx/conf)<br/>vim /usr/local/nginx/conf/nginx.conf<br/>&nbsp;&nbsp; &nbsp;server {<br/>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; listen&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 8003; <br/>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; server_name&nbsp;&nbsp;&nbsp; localhost<br/>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; charset UTF-8;<br/>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; access_log&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; /usr/local/nginx/logs/myweb_access.log;<br/>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; error_log&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; /usr/local/nginx/logs/myweb_error.log;<br/><br/>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; client_max_body_size 75M;<br/><br/>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; location / {&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; &nbsp;<br/>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; include&nbsp; uwsgi_params;<br/>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; uwsgi_pass&nbsp; 127.0.0.1:8001;<br/>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; uwsgi_read_timeout 30;<br/>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; }<br/><br/>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; location /static{<br/>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp; &nbsp;alias /var/www/html_py/blogpy/static;<br/>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; }<br/>&nbsp;&nbsp;&nbsp; }<br/><br/># 重新启动nginx<br/>/usr/local/nginx/sbin/nginx -s stop<br/>/usr/local/nginx/sbin/nginx<br/><br/># 访问 127.0.0.1:8003<br/><br/><br/></p>
+            
+            
+            
+
+        </section>
+
+        <aside id="sidebar">
+            <blockquote class="route">关于我</blockquote>
+            <p>19本科毕业生，代码的搬运工，此界面灵感来自公众号【运维咖啡吧】</p>
+            
+            <blockquote class="route">Github地址</blockquote>
+            <a href="https://github.com/enjoy-binbin">
+                <img border="0" src="https://avatars2.githubusercontent.com/u/22811481" width="100%" height="100%" alt="enjoy-binbin"/>
+            </a>
+            
+            
+        </aside>
+    </div>
+</div>
+</body>
+
+</html>

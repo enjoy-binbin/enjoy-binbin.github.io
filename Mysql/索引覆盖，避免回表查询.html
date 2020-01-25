@@ -1,0 +1,126 @@
+
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta name="theme-color" content="#2879d0"/>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1"/>
+    <meta name="copyright" content="©2020 测试所有"/>
+    <link rel="stylesheet" href="/css/style.min.css" media="screen" type="text/css"/>
+
+    <!-- Begin SEO tag -->
+    <title>索引覆盖，避免回表查询</title>
+    <meta property="og:locale" content="zh_CN"/>
+    <meta property="og:type" content="article"/>
+    <meta property="og:title" content="索引覆盖，避免回表查询"/>
+    <meta property="og:description" content="索引覆盖，避免回表查询"/>
+    <meta property="og:url" content="#"/>
+    <meta property="og:site_name" content="索引覆盖，避免回表查询"/>
+    <meta name="description" content="索引覆盖，避免回表查询"/>
+    <!-- End SEO tag -->
+</head>
+
+<body>
+<header>
+    <div class="inner">
+        <a href="/">
+            <h1>彬彬同学丶</h1>
+        </a>
+        <h2>Choose what you love,love what you choose.</h2>
+    </div>
+</header>
+
+<div id="content-wrapper">
+    <div class="inner clearfix">
+        <section id="main-content">
+        
+            
+                <h1 id="art-title">索引覆盖，避免回表查询</h1>
+            
+            
+            
+                <p><em>下面实验 Base on MySQL5.7 InnoDB</em></p>
+<p>InnoDB索引用到了B+树这样的数据结构，有两大类索引</p>
+<ul>
+<li>聚集索引(clustered index)</li>
+<li>普通索引(secondary index)</li>
+</ul>
+<p>简单的讲，InnoDB必须有个聚集索引，聚集索引上的叶子节点存储了记录行的数据。</p>
+<p>而普通索引中的叶子节点存储的是 主键值，有时会回 主键索引树 查询记录（回表）</p>
+<p><em>知识点：</em></p>
+<p><em>（1）MyISAM中的索引叶子节点存储的是指向数据的指针</em></p>
+<p><em>（2）InnoDB中主键查询非常快，能直接定位行记录</em></p>
+<p><em>（3）InnoDB中普通索引如果能覆盖查询，能减少回表，称为索引覆盖</em></p>
+<p>表中有四条记录 表 InnoDB：</p>
+<p><em>1, shenjian, m, A</em>         <em>3, zhangsan, m, A</em></p>
+<p><em>5, lisi, m, A</em>                 <em>9, wangwu, f, B</em></p>
+<p><img src="/media/editor/MyISAM和InnoDB索引差异-1.jpg" alt="img"></p>
+<p>两个B+树索引分别如上图：</p>
+<ul>
+<li>主键索引树上，id为PK主键，行记录和id索引树存储在一起的，叶子节点中存储着所有的行记录数据</li>
+<li>name为KEY普通索引，有一棵name的索引树，叶子存储着主键id值，需要根据主键回主键树查找数据</li>
+</ul>
+<p>既然从普通索引无法直接定位行记录，那<strong>普通索引的查询过程是怎么样的呢？</strong></p>
+<p>通常情况下，需要扫码两遍索引树。</p>
+<p>例如：</p>
+<p><em>select \</em> from t where name='lisi';*</p>
+<p><strong>是如何执行的呢？</strong></p>
+<p><img src="/media/editor/MyISAM和InnoDB索引差异-2.jpg" alt="img"></p>
+<p>如<strong>粉红色</strong>路径，需要扫码两遍索引树：</p>
+<p>会先通过name辅助索引定位到B+树的叶子节点得到id=5，再通过聚集索引定位到行记录。扫了两边索引树</p>
+<p>这就是所谓的<strong>回表查询</strong>，先定位主键值，再定位行记录，它的性能较扫一遍索引树更低。</p>
+<p><strong>二、什么是索引覆盖</strong>(Covering index)<strong>？</strong></p>
+<p>额，并没有在MySQL的官网找到这个概念。</p>
+<p>借用一下SQL-Server官网的说法。<a href="http://dbadiaries.com/sql-server-covering-index-and-key-lookup/#">http://dbadiaries.com/sql-server-covering-index-and-key-lookup/#</a></p>
+<h4>What is a covering index?</h4>
+<p>A covering index is a non-clustered index which includes all columns referenced in the query and therefore, the optimizer does not have to perform an additional lookup to the table in order to retrieve the data requested. As the data requested is all indexed by the covering index, it is a faster operation.</p>
+<p>MySQL官网，类似的说法出现在explain查询计划优化章节，即explain的输出结果Extra字段为Using index时，能够触发索引覆盖。<a href="https://dev.mysql.com/doc/refman/8.0/en/explain-output.html">https://dev.mysql.com/doc/refman/8.0/en/explain-output.html</a></p>
+<p><code>Using index</code> (JSON property: <code>using_index</code>)</p>
+<p>The column information is retrieved from the table using only information in the index tree without having to do an additional seek to read the actual row. This strategy can be used when the query uses only columns that are part of a single index.</p>
+<p>不管是SQL-Server官网，还是MySQL官网，都表达了：</p>
+<p>如果在一棵索引树上就能获取查询所需的所有列数据，就不用回表，速度更快。</p>
+<p><strong>三、如何实现覆盖索引？</strong></p>
+<p>有这样的一个表：</p>
+<div class="highlight"><pre><span></span><span class="k">create</span> <span class="k">table</span> <span class="nf">user</span> <span class="p">(</span>
+    <span class="n">id</span> <span class="kt">int</span> <span class="k">primary</span> <span class="k">key</span><span class="p">,</span>
+    <span class="n">name</span> <span class="kt">varchar</span><span class="p">(</span><span class="mi">20</span><span class="p">),</span>
+    <span class="n">sex</span> <span class="kt">varchar</span><span class="p">(</span><span class="mi">5</span><span class="p">),</span>
+    <span class="k">index</span><span class="p">(</span><span class="n">name</span><span class="p">)</span>
+<span class="p">)</span> <span class="kp">engine</span><span class="o">=</span><span class="n">innodb</span><span class="p">;</span>
+</pre></div>
+<p>第一个SQl语句：</p>
+<p><em>select id, name from user where name='Tom';</em></p>
+<p><img src="/media/editor/索引覆盖，避免回表查询-1.png" alt="img"></p>
+<p>查询了id, 和 name两个字段，能够命中name普通索引，通过name的索引树就能够获得所需数据，所以不需要回表，用到了覆盖索引，效率较高。<em>画外音：Extra: Using index，用到了覆盖索引</em></p>
+<p>第二个SQL语句：</p>
+<p><em>select id, name, sex from user where name='Tom';</em></p>
+<p><img src="/media/editor/索引覆盖，避免回表查询-2.png" alt="img"></p>
+<p>跟上条语句相比，多查询了一个sex字段，虽然是命中了name索引，但是sex字段必须回表查询才能获得数据，不符合索引覆盖，需要通过主键id回表。</p>
+<p>如果我们把name索引升级为(name, sex)组合索引，上面两条语句就都能用到索引覆盖了（同时满足最左匹配）</p>
+<p><img src="/media/editor/索引覆盖，避免回表查询-3.png" alt="img"></p>
+<p><strong>四、其他覆盖索引的例子</strong></p>
+<p>例子i：全表count()查询优化，给name字段添加索引后，能够用到索引覆盖来提效。tips：key和index都为索引</p>
+<p><img src="/media/editor/索引覆盖，避免回表查询-4.png" alt="img"></p>
+
+            
+            
+            
+
+        </section>
+
+        <aside id="sidebar">
+            <blockquote class="route">关于我</blockquote>
+            <p>19本科毕业生，代码的搬运工，此界面灵感来自公众号【运维咖啡吧】</p>
+            
+            <blockquote class="route">Github地址</blockquote>
+            <a href="https://github.com/enjoy-binbin">
+                <img border="0" src="https://avatars2.githubusercontent.com/u/22811481" width="100%" height="100%" alt="enjoy-binbin"/>
+            </a>
+            
+            
+        </aside>
+    </div>
+</div>
+</body>
+
+</html>

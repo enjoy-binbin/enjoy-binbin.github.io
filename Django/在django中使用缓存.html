@@ -1,0 +1,194 @@
+
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta name="theme-color" content="#2879d0"/>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1"/>
+    <meta name="copyright" content="©2020 测试所有"/>
+    <link rel="stylesheet" href="/css/style.min.css" media="screen" type="text/css"/>
+
+    <!-- Begin SEO tag -->
+    <title>在django中使用缓存</title>
+    <meta property="og:locale" content="zh_CN"/>
+    <meta property="og:type" content="article"/>
+    <meta property="og:title" content="在django中使用缓存"/>
+    <meta property="og:description" content="在django中使用缓存"/>
+    <meta property="og:url" content="#"/>
+    <meta property="og:site_name" content="在django中使用缓存"/>
+    <meta name="description" content="在django中使用缓存"/>
+    <!-- End SEO tag -->
+</head>
+
+<body>
+<header>
+    <div class="inner">
+        <a href="/">
+            <h1>彬彬同学丶</h1>
+        </a>
+        <h2>Choose what you love,love what you choose.</h2>
+    </div>
+</header>
+
+<div id="content-wrapper">
+    <div class="inner clearfix">
+        <section id="main-content">
+        
+            
+                <h1 id="art-title">在django中使用缓存</h1>
+            
+            
+            
+                <h3>在django中使用缓存</h3>
+<p>文档地址：<a href="https://docs.djangoproject.com/en/2.1/topics/cache/">https://docs.djangoproject.com/en/2.1/topics/cache/</a></p>
+<p>中文文档：<a href="http://djangobook.py3k.cn/2.0/chapter15/">http://djangobook.py3k.cn/2.0/chapter15/</a></p>
+<p>django的缓存系统中有基于全站，有基于视图等不同粒度的缓存</p>
+<p>下面我根据自己的想法，只使用了最基本的，cache.get和cache.set两个接口</p>
+<p>一般缓存处理逻辑，在缓存中查找数据，有则返回，否则则从数据库获取数据并写入缓存</p>
+<h3>使用本地内存缓冲</h3>
+<div class="highlight"><pre><span></span><span class="c1"># settings.py里配置</span>
+<span class="n">CACHES</span> <span class="o">=</span> <span class="p">{</span>
+    <span class="s1">&#39;default&#39;</span><span class="p">:</span> <span class="p">{</span>
+        <span class="s1">&#39;BACKEND&#39;</span><span class="p">:</span> <span class="s1">&#39;django.core.cache.backends.locmem.LocMemCache&#39;</span><span class="p">,</span>  <span class="c1"># 本地内存缓存</span>
+        <span class="s1">&#39;TIMEOUT&#39;</span><span class="p">:</span> <span class="mi">60</span> <span class="o">*</span> <span class="mi">60</span> <span class="o">*</span> <span class="mi">1</span><span class="p">,</span>  <span class="c1"># 过期时间 秒, 一个钟过期</span>
+        <span class="s1">&#39;LOCATION&#39;</span><span class="p">:</span> <span class="s1">&#39;unique-snowflake&#39;</span><span class="p">,</span>
+    <span class="p">}</span>
+<span class="p">}</span>
+
+<span class="c1"># views.py中</span>
+<span class="kn">from</span> <span class="nn">django.core.cache</span> <span class="kn">import</span> <span class="n">cache</span>
+<span class="kn">from</span> <span class="nn">django.views.generic</span> <span class="kn">import</span> <span class="n">ListView</span>
+
+<span class="kn">from</span> <span class="nn">blog.models</span> <span class="kn">import</span> <span class="n">Article</span>
+
+<span class="k">class</span> <span class="nc">IndexView</span><span class="p">(</span><span class="n">ListView</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot; 首页view，返回一些文章列表 &quot;&quot;&quot;</span>
+    <span class="n">model</span> <span class="o">=</span> <span class="n">Article</span>  <span class="c1"># 指定的model</span>
+    <span class="n">template_name</span> <span class="o">=</span> <span class="s1">&#39;blog/index.html&#39;</span>  <span class="c1"># 渲染的模板</span>
+    <span class="n">context_object_name</span> <span class="o">=</span> <span class="s1">&#39;article_list&#39;</span>  <span class="c1"># 在模板中使用的上下文变量，默认为 object_list</span>
+    <span class="n">page_kwarg</span> <span class="o">=</span> <span class="s1">&#39;page&#39;</span>  <span class="c1"># 前端约定好的页码的key</span>
+
+    <span class="k">def</span> <span class="nf">get_queryset</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="n">queryset</span> <span class="o">=</span> <span class="n">cache</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">cache_key</span><span class="p">)</span>  <span class="c1"># 查询缓存</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">queryset</span><span class="p">:</span>  <span class="c1"># 缓存没命中会返回 None</span>
+            <span class="n">queryset</span> <span class="o">=</span> <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="n">get_queryset</span><span class="p">()</span>  <span class="c1"># 调用父类的方法</span>
+            <span class="n">cache</span><span class="o">.</span><span class="n">set</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">cache_key</span><span class="p">,</span> <span class="n">queryset</span><span class="p">)</span>  <span class="c1"># 设置缓存</span>
+        <span class="k">return</span> <span class="n">queryset</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">page_value</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; 前端页码值，用于做缓存key的拼接 &quot;&quot;&quot;</span>
+        <span class="n">page</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">request</span><span class="o">.</span><span class="n">GET</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">page_kwarg</span><span class="p">)</span> <span class="ow">or</span> <span class="mi">1</span>
+        <span class="k">return</span> <span class="n">page</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">cache_key</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; 缓存里的key &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="s1">&#39;index_</span><span class="si">%s</span><span class="s1">&#39;</span> <span class="o">%</span> <span class="bp">self</span><span class="o">.</span><span class="n">page_value</span>
+
+ <span class="c1"># 缓存设置,想在本地看到是否有效,可以实时更改数据库里的数据,缓存里的数据不会变</span>
+</pre></div>
+<h3>使用Memcached进行缓存</h3>
+<p>首先安装memcached (本机win10 64位)</p>
+<p>下载地址：<a href="http://static.runoob.com/download/memcached-win64-1.4.4-14.zip">http://static.runoob.com/download/memcached-win64-1.4.4-14.zip</a></p>
+<p>参考连接：<a href="http://www.runoob.com/memcached/window-install-memcached.html">http://www.runoob.com/memcached/window-install-memcached.html</a></p>
+<p>按照链接下载符合版本的文件，解压后，进入命令行，注意使用管理员命令行</p>
+<pre><code># 安装服务，之后可以在 我的电脑&gt;管理&gt;服务和应用程序中查看，可以这样启动或关闭
+d:\memcached&gt;memcached.exe -d install
+
+# 启动服务
+d:\memcached&gt;memcached.exe -d start
+
+# 关闭服务
+d:\memcached\memcached.exe -d stop
+
+# 卸载
+d:\memcached\memcached.exe -d uninstall
+
+# 设置 memcached 最大的缓存配置为512M
+d:\memcached&gt;memcached.exe -d runserver -m 512
+</code></pre>
+<div class="highlight"><pre><span></span><span class="c1"># 一些命令行操作，连接 set get</span>
+telnet <span class="m">127</span>.0.0.1 <span class="m">11211</span>
+
+<span class="c1"># 设置一个缓存, key为bin，flag为0（不懂） 10s过期，存储5个字节</span>
+&lt; <span class="nb">set</span> bin <span class="m">0</span> <span class="m">10</span> <span class="m">5</span>
+&gt; abcde
+&gt; STORED
+
+<span class="c1"># 获取一个缓存</span>
+&lt; get bin
+&gt; VALUE bin <span class="m">0</span> <span class="m">5</span>
+&gt; abcde
+&gt; END
+
+其他略。
+</pre></div>
+<h4>在django中使用memcached缓存</h4>
+<p>安装python-memcached <code>pip install python-memcached</code>，记得安装和启动memached服务</p>
+<div class="highlight"><pre><span></span><span class="c1"># settings.py里配置</span>
+<span class="n">CACHES</span> <span class="o">=</span> <span class="p">{</span>
+    <span class="s1">&#39;default&#39;</span><span class="p">:</span> <span class="p">{</span>
+        <span class="s1">&#39;BACKEND&#39;</span><span class="p">:</span> <span class="s1">&#39;django.core.cache.backends.memcached.MemcachedCache&#39;</span><span class="p">,</span>
+        <span class="s1">&#39;LOCATION&#39;</span><span class="p">:</span> <span class="s1">&#39;127.0.0.1:11211&#39;</span><span class="p">,</span>  <span class="c1"># 连接主机和端口</span>
+        <span class="s1">&#39;TIMEOUT&#39;</span><span class="p">:</span> <span class="mi">60</span> <span class="o">*</span> <span class="mi">60</span> <span class="o">*</span> <span class="mi">1</span><span class="p">,</span>  <span class="c1"># 过期时间 单位为秒</span>
+    <span class="p">}</span>
+<span class="p">}</span>
+
+<span class="c1"># views中的逻辑和之前的一样</span>
+<span class="kn">from</span> <span class="nn">django.core.cache</span> <span class="kn">import</span> <span class="n">cache</span>
+<span class="kn">from</span> <span class="nn">django.views.generic</span> <span class="kn">import</span> <span class="n">ListView</span>
+
+<span class="kn">from</span> <span class="nn">blog.models</span> <span class="kn">import</span> <span class="n">Article</span>
+
+<span class="k">class</span> <span class="nc">IndexView</span><span class="p">(</span><span class="n">ListView</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot; 首页view，返回一些文章列表 &quot;&quot;&quot;</span>
+    <span class="n">model</span> <span class="o">=</span> <span class="n">Article</span>  <span class="c1"># 指定的model</span>
+    <span class="n">template_name</span> <span class="o">=</span> <span class="s1">&#39;blog/index.html&#39;</span>  <span class="c1"># 渲染的模板</span>
+    <span class="n">context_object_name</span> <span class="o">=</span> <span class="s1">&#39;article_list&#39;</span>  <span class="c1"># 在模板中使用的上下文变量，默认为 object_list</span>
+    <span class="n">page_kwarg</span> <span class="o">=</span> <span class="s1">&#39;page&#39;</span>  <span class="c1"># 前端约定好的页码的key</span>
+
+    <span class="k">def</span> <span class="nf">get_queryset</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="n">queryset</span> <span class="o">=</span> <span class="n">cache</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">cache_key</span><span class="p">)</span>  <span class="c1"># 查询缓存</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">queryset</span><span class="p">:</span>  <span class="c1"># 缓存没命中会返回 None</span>
+            <span class="n">queryset</span> <span class="o">=</span> <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="n">get_queryset</span><span class="p">()</span>  <span class="c1"># 调用父类的方法</span>
+            <span class="n">cache</span><span class="o">.</span><span class="n">set</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">cache_key</span><span class="p">,</span> <span class="n">queryset</span><span class="p">)</span>  <span class="c1"># 设置缓存</span>
+        <span class="k">return</span> <span class="n">queryset</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">page_value</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; 前端页码值，用于做缓存key的拼接 &quot;&quot;&quot;</span>
+        <span class="n">page</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">request</span><span class="o">.</span><span class="n">GET</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">page_kwarg</span><span class="p">)</span> <span class="ow">or</span> <span class="mi">1</span>
+        <span class="k">return</span> <span class="n">page</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">cache_key</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; 缓存里的key &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="s1">&#39;index_</span><span class="si">%s</span><span class="s1">&#39;</span> <span class="o">%</span> <span class="bp">self</span><span class="o">.</span><span class="n">page_value</span>
+
+<span class="c1"># 缓存设置,想在本地看到是否有效,可以实时更改数据库里的数据,缓存里的数据不会变</span>
+<span class="c1"># 对于 memcached服务，需要开启服务，而后重启Django项目，查看效果。</span>
+</pre></div>
+
+            
+            
+            
+
+        </section>
+
+        <aside id="sidebar">
+            <blockquote class="route">关于我</blockquote>
+            <p>19本科毕业生，代码的搬运工，此界面灵感来自公众号【运维咖啡吧】</p>
+            
+            <blockquote class="route">Github地址</blockquote>
+            <a href="https://github.com/enjoy-binbin">
+                <img border="0" src="https://avatars2.githubusercontent.com/u/22811481" width="100%" height="100%" alt="enjoy-binbin"/>
+            </a>
+            
+            
+        </aside>
+    </div>
+</div>
+</body>
+
+</html>

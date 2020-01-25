@@ -1,0 +1,116 @@
+
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta name="theme-color" content="#2879d0"/>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1"/>
+    <meta name="copyright" content="©2020 测试所有"/>
+    <link rel="stylesheet" href="/css/style.min.css" media="screen" type="text/css"/>
+
+    <!-- Begin SEO tag -->
+    <title>Centos7.2下 源码编译安装 lnmp环境( 上 )</title>
+    <meta property="og:locale" content="zh_CN"/>
+    <meta property="og:type" content="article"/>
+    <meta property="og:title" content="Centos7.2下 源码编译安装 lnmp环境( 上 )"/>
+    <meta property="og:description" content="Centos7.2下 源码编译安装 lnmp环境( 上 )"/>
+    <meta property="og:url" content="#"/>
+    <meta property="og:site_name" content="Centos7.2下 源码编译安装 lnmp环境( 上 )"/>
+    <meta name="description" content="Centos7.2下 源码编译安装 lnmp环境( 上 )"/>
+    <!-- End SEO tag -->
+</head>
+
+<body>
+<header>
+    <div class="inner">
+        <a href="/">
+            <h1>彬彬同学丶</h1>
+        </a>
+        <h2>Choose what you love,love what you choose.</h2>
+    </div>
+</header>
+
+<div id="content-wrapper">
+    <div class="inner clearfix">
+        <section id="main-content">
+        
+            
+                <h1 id="art-title">Centos7.2下 源码编译安装 lnmp环境( 上 )</h1>
+            
+            
+            
+                <p><h1 label="Title center" name="tc" style="border-bottom-color:#cccccc;border-bottom-width:2px;border-bottom-style:solid;padding:0px 4px 0px 0px;text-align:center;margin:0px 0px 20px;"><span style="color:#c0504d;">centos7.2下配置lnmp<br/> </span></h1><p style="text-align:center;"><strong class="ue_t">源码编译nginx+php7<br/> </strong></p><h3><span class="ue_t" style="font-family:幼圆">前言：</span></h3><p style="text-indent:2em;">之前服务器是搭建的 lamp环境, apache2.4+php5.6, nginx现在很流行了, 因为学习原因, 我也着手在自己服务器上搭建lnmp环境, 由于之前的 lamp是用yum直接安装的, 现在想在 一台服务器上 实现 apache和nginx共同工作, 经过不断搜索实践，终于完成。总结起来.</p><p style="text-indent:2em;">Centos7.2 下配置&nbsp; nginx-1.42. 和 php-7.0.16 + mysql 源码编译安装方式</p><p style="text-indent:2em;">实践上是在自己原有服务器上实现的。但是服务器环境太差，下文假定是在 0 服务器上执行<br/> </p><h3><span style="font-family:幼圆"># 安装编译工具</span></h3><pre class="brush:html;toolbar:false">yum&nbsp;install&nbsp;gcc&nbsp;automake&nbsp;autoconf&nbsp;libtool&nbsp;gcc-c++</pre><h3><span style="font-family:幼圆"># 安装基础库 ( 无则安装，有则更新)<br/> </span></h3><pre class="brush:css;toolbar:false">yum&nbsp;install&nbsp;gd&nbsp;zlib&nbsp;zlib-devel&nbsp;openssl&nbsp;openssl-devel&nbsp;libxml2&nbsp;libxml2-devel&nbsp;libjpeg&nbsp;libjpeg-devel&nbsp;libpng&nbsp;libpng-devel&nbsp;freetype&nbsp;freetype-devel&nbsp;libmcrypt&nbsp;libmcrypt-devel</pre><h3><span style="font-family:幼圆"># 安装mysql ( 原先lamp中有了mysql，所以这部可以不用 )<br/> </span></h3><pre class="brush:cpp;toolbar:false">yum&nbsp;install&nbsp;mysql&nbsp;mysql-server</pre><h3><span style="font-family:幼圆"># nginx依赖 正则PCRE库</span></h3><pre class="brush:cpp;toolbar:false">yum&nbsp;install&nbsp;pcre&nbsp;pcre-devel</pre><h3><span class="ue_t" style="font-family:幼圆"></span></h3><h3><span style="font-family:幼圆"># 编译nginx</span></h3><pre class="brush:cpp;toolbar:false">cd&nbsp;/usr/local/src
+wget&nbsp;<a href="http://nginx.org/download/nginx-1.4.2.tar.gz">http://nginx.org/download/nginx-1.4.2.tar.gz</a>
+tar&nbsp;zxvf&nbsp;nginx-1.4.2.tar.gz</p>
+<p>cd&nbsp;nginx-1.4.2/
+./configure&nbsp;--prefix=/usr/local/nginx
+make&nbsp;&amp;&amp;&nbsp;make&nbsp;install</p>
+<h1>&nbsp;启动nginx</h1>
+<p>cd&nbsp;/usr/local/nginx
+./sbin/nginx&lt;/pre&gt;<h3><span class="ue_t" style="font-family:幼圆"></span></h3><h3><span style="font-family:幼圆"></span></h3><h3><span style="font-family:幼圆"># 编译php</span></h3><pre class="brush:cpp;toolbar:false">#&nbsp;源码编译php7.0.16&nbsp;
+&nbsp;&nbsp;&nbsp;&nbsp;cd&nbsp;/usr/local/src
+&nbsp;&nbsp;&nbsp;&nbsp;wget&nbsp;<a href="http://cn2.php.net/get/php-7.0.16.tar.gz/from/this/mirror">http://cn2.php.net/get/php-7.0.16.tar.gz/from/this/mirror</a>
+&nbsp;&nbsp;&nbsp;&nbsp;mv&nbsp;./mirror&nbsp;./php-7.0.16.tar.gz
+&nbsp;&nbsp;&nbsp;&nbsp;tar&nbsp;zxvf&nbsp;php-7.0.16.tar.gz
+&nbsp;&nbsp;&nbsp;&nbsp;cd&nbsp;php-7.0.16/</p>
+<p>&nbsp;&nbsp;&nbsp;&nbsp;./configure&nbsp;--prefix=/usr/local/php7&nbsp;\
+&nbsp;&nbsp;&nbsp;&nbsp;--with-gd&nbsp;\
+&nbsp;&nbsp;&nbsp;&nbsp;--with-freetype-dir&nbsp;\
+&nbsp;&nbsp;&nbsp;&nbsp;--enable-gd-native-ttf&nbsp;\
+&nbsp;&nbsp;&nbsp;&nbsp;--enable-mysqlnd&nbsp;\
+&nbsp;&nbsp;&nbsp;&nbsp;--with-pdo-mysql=mysqlnd&nbsp;\
+&nbsp;&nbsp;&nbsp;&nbsp;--with-openssl&nbsp;\
+&nbsp;&nbsp;&nbsp;&nbsp;--with-mcrypt&nbsp;\
+&nbsp;&nbsp;&nbsp;&nbsp;--enable-mbstring&nbsp;\
+&nbsp;&nbsp;&nbsp;&nbsp;--enable-zip&nbsp;\
+&nbsp;&nbsp;&nbsp;&nbsp;--enable-fpm</p>
+<h1>&nbsp;这里编译安装时间会很长</h1>
+<p>&nbsp;&nbsp;&nbsp;&nbsp;make&nbsp;&amp;&amp;&nbsp;make&nbsp;install
+&nbsp;&nbsp;&nbsp;&nbsp;</p>
+<h1>&nbsp;复制配置文件</h1>
+<p>&nbsp;&nbsp;&nbsp;&nbsp;cp&nbsp;/usr/local/src/php-7.0.16/php.ini-development&nbsp;/usr/local/php7/lib/php.ini
+&nbsp;&nbsp;&nbsp;&nbsp;cp&nbsp;/usr/local/php7/etc/php-fpm.conf.default&nbsp;/usr/local/php7/etc/php-fpm.conf
+&nbsp;&nbsp;&nbsp;&nbsp;cp&nbsp;/usr/local/php7/etc/php-fpm.d/www.conf.default&nbsp;/usr/local/php7/etc/php-fpm.d/www.conf
+&nbsp;&nbsp;&nbsp;&nbsp;</p>
+<h1>&nbsp;启动php</h1>
+<p>/usr/local/php7/sbin/php-fpm&lt;/pre&gt;<h3><span style="font-family:幼圆"># nginx和php的整合<br/> </span></h3><pre class="brush:cpp;toolbar:false">#&nbsp;整合nginx+php</p>
+<h1>&nbsp;编辑nginx的配置文件&nbsp;找到如下代码段,去掉注释和修改</h1>
+<h1>&nbsp;将.php文件的请求转发给&nbsp;php进程</h1>
+<p>location&nbsp;~&nbsp;.php$&nbsp;{
+&nbsp;&nbsp;&nbsp;&nbsp;root&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;html;
+&nbsp;&nbsp;&nbsp;&nbsp;fastcgi_pass&nbsp;&nbsp;&nbsp;127.0.0.1:9000;
+&nbsp;&nbsp;&nbsp;&nbsp;fastcgi_index&nbsp;&nbsp;index.php;
+&nbsp;&nbsp;&nbsp;&nbsp;fastcgi_param&nbsp;&nbsp;SCRIPT_FILENAME&nbsp;&nbsp;$DOCUMENT_ROOT$fastcgi_script_name;
+&nbsp;&nbsp;&nbsp;&nbsp;include&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;fastcgi_params;
+}</p>
+<h1>&nbsp;修改nginx配置文件后记得reload</h1>
+<p>/usr/local/nginx/sbin/nginx&nbsp;-t
+/usr/local/nginx/sbin/nginx&nbsp;-s&nbsp;reload&lt;/pre&gt;<h3><span style="font-family:幼圆"># 编写测试文件</span></h3><pre class="brush:bash;toolbar:false">编写测试PHP页面
+/usr/local/nginx/html/index.php</p>
+<p>&lt;?php
+&nbsp;&nbsp;&nbsp;&nbsp;phpinfo();
+?&gt;</p>
+<p>出现phpinfo即可&lt;/pre&gt;<p>&nbsp; &nbsp; &nbsp; &nbsp;&nbsp; <br/> </p><p># 上课去拉。 晚上还有有一篇 在nginx下测试博客系统以及nginx的一些知识点 &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;&nbsp; &nbsp;&nbsp; &nbsp; &nbsp; &nbsp; &nbsp;&nbsp; <br/> </p></p>
+
+            
+            
+            
+
+        </section>
+
+        <aside id="sidebar">
+            <blockquote class="route">关于我</blockquote>
+            <p>19本科毕业生，代码的搬运工，此界面灵感来自公众号【运维咖啡吧】</p>
+            
+            <blockquote class="route">Github地址</blockquote>
+            <a href="https://github.com/enjoy-binbin">
+                <img border="0" src="https://avatars2.githubusercontent.com/u/22811481" width="100%" height="100%" alt="enjoy-binbin"/>
+            </a>
+            
+            
+        </aside>
+    </div>
+</div>
+</body>
+
+</html>

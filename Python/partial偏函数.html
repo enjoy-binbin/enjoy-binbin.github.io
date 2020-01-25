@@ -1,0 +1,306 @@
+
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta name="theme-color" content="#2879d0"/>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1"/>
+    <meta name="copyright" content="©2020 测试所有"/>
+    <link rel="stylesheet" href="/css/style.min.css" media="screen" type="text/css"/>
+
+    <!-- Begin SEO tag -->
+    <title>partial偏函数</title>
+    <meta property="og:locale" content="zh_CN"/>
+    <meta property="og:type" content="article"/>
+    <meta property="og:title" content="partial偏函数"/>
+    <meta property="og:description" content="partial偏函数"/>
+    <meta property="og:url" content="#"/>
+    <meta property="og:site_name" content="partial偏函数"/>
+    <meta name="description" content="partial偏函数"/>
+    <!-- End SEO tag -->
+</head>
+
+<body>
+<header>
+    <div class="inner">
+        <a href="/">
+            <h1>彬彬同学丶</h1>
+        </a>
+        <h2>Choose what you love,love what you choose.</h2>
+    </div>
+</header>
+
+<div id="content-wrapper">
+    <div class="inner clearfix">
+        <section id="main-content">
+        
+            
+                <h1 id="art-title">partial偏函数</h1>
+            
+            
+            
+                <p><em>代码Base on Python3.6</em></p>
+<p>官方文档: <a href="https://docs.python.org/3/library/functools.html?highlight=partial#functools.partial">https://docs.python.org/3/library/functools.html?highlight=partial#functools.partial</a></p>
+<p>简单的先看下官方定义，其中第一段是刚新鲜出炉的Py3.8的，后一段是我目前用着3.6版本的定义</p>
+<p>不明白那个 / 的作用，其他变化就是关键字参数，update字典更优雅的写法了。</p>
+<p>简单翻译：返回一个偏函数对象，这个对象和func一样可以被调用，可以指定参数，大致实现等同于...</p>
+<div class="highlight"><pre><span></span><span class="c1"># functools.partial(func, /, *args, **keywords)</span>
+<span class="c1"># Return a new partial object which when called will behave like func called with the positional arguments args and keyword arguments keywords. If more arguments are supplied to the call, they are appended to args. If additional keyword arguments are supplied, they extend and override keywords. Roughly equivalent to:</span>
+
+<span class="k">def</span> <span class="nf">partial</span><span class="p">(</span><span class="n">func</span><span class="p">,</span> <span class="o">/</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">keywords</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">newfunc</span><span class="p">(</span><span class="o">*</span><span class="n">fargs</span><span class="p">,</span> <span class="o">**</span><span class="n">fkeywords</span><span class="p">):</span>
+        <span class="n">newkeywords</span> <span class="o">=</span> <span class="p">{</span><span class="o">**</span><span class="n">keywords</span><span class="p">,</span> <span class="o">**</span><span class="n">fkeywords</span><span class="p">}</span>
+        <span class="k">return</span> <span class="n">func</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">*</span><span class="n">fargs</span><span class="p">,</span> <span class="o">**</span><span class="n">newkeywords</span><span class="p">)</span>
+    <span class="n">newfunc</span><span class="o">.</span><span class="n">func</span> <span class="o">=</span> <span class="n">func</span>
+    <span class="n">newfunc</span><span class="o">.</span><span class="n">args</span> <span class="o">=</span> <span class="n">args</span>
+    <span class="n">newfunc</span><span class="o">.</span><span class="n">keywords</span> <span class="o">=</span> <span class="n">keywords</span>
+    <span class="k">return</span> <span class="n">newfunc</span>
+
+<span class="o">-----------------------------------------------------------------------------------------</span>
+
+<span class="c1"># functools.partial(func, *args, **keywords)</span>
+<span class="c1"># Return a new partial object which when called will behave like func called with the positional arguments args and keyword arguments keywords. If more arguments are supplied to the call, they are appended to args. If additional keyword arguments are supplied, they extend and override keywords. Roughly equivalent to:</span>
+
+<span class="k">def</span> <span class="nf">partial</span><span class="p">(</span><span class="n">func</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">keywords</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">newfunc</span><span class="p">(</span><span class="o">*</span><span class="n">fargs</span><span class="p">,</span> <span class="o">**</span><span class="n">fkeywords</span><span class="p">):</span>
+        <span class="n">newkeywords</span> <span class="o">=</span> <span class="n">keywords</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+        <span class="n">newkeywords</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">fkeywords</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">func</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">*</span><span class="n">fargs</span><span class="p">,</span> <span class="o">**</span><span class="n">newkeywords</span><span class="p">)</span>
+    <span class="n">newfunc</span><span class="o">.</span><span class="n">func</span> <span class="o">=</span> <span class="n">func</span>
+    <span class="n">newfunc</span><span class="o">.</span><span class="n">args</span> <span class="o">=</span> <span class="n">args</span>
+    <span class="n">newfunc</span><span class="o">.</span><span class="n">keywords</span> <span class="o">=</span> <span class="n">keywords</span>
+    <span class="k">return</span> <span class="n">newfunc</span>
+</pre></div>
+<p>首先，我们需要简单了解下偏函数的作用：和装饰器一样，它可以扩展函数的功能，但又不完成等价于装饰器，偏函数产生一个新函数。</p>
+<p>先看个简单的例子：</p>
+<p>我们需要对一串二进制字符串进行转换，转换为int，一般最先想到的实现是使用内置函数。Python中可以直接使用int进行类型转换，应该是个工厂函数，同时它也接受一个base的参数，代表进制数，默认为十进制，如果要使用base，需要转换的数字要以字符串的形式传入</p>
+<div class="highlight"><pre><span></span>&gt;&gt;&gt; int
+&lt;class <span class="s1">&#39;int&#39;</span>&gt;
+&gt;&gt;&gt; int<span class="o">(</span><span class="s1">&#39;100101&#39;</span>, <span class="nv">base</span><span class="o">=</span><span class="m">2</span><span class="o">)</span>
+<span class="m">37</span>
+&gt;&gt;&gt;
+</pre></div>
+<p>如果使用partial偏函数的话，我们可以对int进行扩展，对这个需要频繁调用的函数（其中某些参数是已知的固定值）进行偏函数处理，虽然我们可以调用这个原函数多次，不过固定参数似乎有些冗余。</p>
+<div class="highlight"><pre><span></span>&gt;&gt;&gt; from functools import partial
+&gt;&gt;&gt; <span class="nv">int_2</span> <span class="o">=</span> partial<span class="o">(</span>int, <span class="nv">base</span><span class="o">=</span><span class="m">2</span><span class="o">)</span>
+&gt;&gt;&gt; int_2<span class="o">(</span><span class="s1">&#39;100101&#39;</span><span class="o">)</span>
+<span class="m">37</span>
+&gt;&gt;&gt; int_2<span class="o">(</span><span class="s1">&#39;xxx&#39;</span><span class="o">)</span> ......调用很多次
+
+<span class="c1"># 同时也支持继续传参, 后面的会覆盖掉前面的</span>
+&gt;&gt;&gt; int_2<span class="o">(</span><span class="s1">&#39;10011&#39;</span>, <span class="nv">base</span><span class="o">=</span><span class="m">10</span><span class="o">)</span>
+<span class="m">10011</span>
+</pre></div>
+<p>而且如果原函数需要调用很多次，在未来的某天需要修改那个固定参数，就需要改变全部的函数调用，如果使用了偏函数，就只需要修改那一个偏函数。</p>
+<p>偏函数会产生一个新函数</p>
+<div class="highlight"><pre><span></span>&gt;&gt;&gt; print<span class="o">(</span>sum<span class="o">)</span>
+&lt;built-in <span class="k">function</span> sum&gt;
+&gt;&gt;&gt; print<span class="o">(</span>partial<span class="o">(</span>sum, <span class="m">10</span><span class="o">))</span>
+functools.partial<span class="o">(</span>&lt;built-in <span class="k">function</span> sum&gt;, <span class="m">10</span><span class="o">)</span>
+&gt;&gt;&gt; id<span class="o">(</span>sum<span class="o">)</span>
+<span class="m">1361476223264</span>
+&gt;&gt;&gt; id<span class="o">(</span>partial<span class="o">(</span>sum, <span class="m">10</span><span class="o">))</span>
+<span class="m">1361496415512</span>
+&gt;&gt;&gt;
+</pre></div>
+<p><strong>看看help的信息</strong></p>
+<div class="highlight"><pre><span></span><span class="o">&gt;&gt;&gt;</span> <span class="n">help</span><span class="p">(</span><span class="n">partial</span><span class="p">)</span>
+<span class="n">Help</span> <span class="n">on</span> <span class="k">class</span> <span class="nc">partial</span> <span class="ow">in</span> <span class="n">module</span> <span class="n">functools</span><span class="p">:</span>
+
+<span class="k">class</span> <span class="nc">partial</span><span class="p">(</span><span class="n">builtins</span><span class="o">.</span><span class="n">object</span><span class="p">)</span>
+ <span class="o">|</span>  <span class="n">partial</span><span class="p">(</span><span class="n">func</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">keywords</span><span class="p">)</span> <span class="o">-</span> <span class="n">new</span> <span class="n">function</span> <span class="k">with</span> <span class="n">partial</span> <span class="n">application</span>
+ <span class="o">|</span>  <span class="n">of</span> <span class="n">the</span> <span class="n">given</span> <span class="n">arguments</span> <span class="ow">and</span> <span class="n">keywords</span><span class="o">.</span>
+ <span class="o">|</span>
+ <span class="o">|</span>  <span class="n">Methods</span> <span class="n">defined</span> <span class="n">here</span><span class="p">:</span>
+ <span class="o">|</span>
+ <span class="o">|</span>  <span class="fm">__call__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">/</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+ <span class="o">|</span>      <span class="n">Call</span> <span class="bp">self</span> <span class="k">as</span> <span class="n">a</span> <span class="n">function</span><span class="o">.</span>
+ <span class="o">|</span>
+ <span class="o">|</span>  <span class="fm">__delattr__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="o">/</span><span class="p">)</span>
+ <span class="o">|</span>      <span class="n">Implement</span> <span class="nb">delattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">)</span><span class="o">.</span>
+ <span class="o">|</span>
+ <span class="o">|</span>  <span class="fm">__getattribute__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="o">/</span><span class="p">)</span>
+ <span class="o">|</span>      <span class="n">Return</span> <span class="nb">getattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">)</span><span class="o">.</span>
+ <span class="o">|</span>
+ <span class="o">|</span>  <span class="fm">__new__</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span> <span class="kn">from</span> <span class="nn">builtins.type</span>
+ <span class="o">|</span>      <span class="n">Create</span> <span class="ow">and</span> <span class="k">return</span> <span class="n">a</span> <span class="n">new</span> <span class="nb">object</span><span class="o">.</span>  <span class="n">See</span> <span class="n">help</span><span class="p">(</span><span class="nb">type</span><span class="p">)</span> <span class="k">for</span> <span class="n">accurate</span> <span class="n">signature</span><span class="o">.</span>
+ <span class="o">|</span>
+ <span class="o">|</span>  <span class="n">__reduce__</span><span class="p">(</span><span class="o">...</span><span class="p">)</span>
+ <span class="o">|</span>      <span class="n">helper</span> <span class="k">for</span> <span class="n">pickle</span>
+ <span class="o">|</span>
+ <span class="o">|</span>  <span class="fm">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">/</span><span class="p">)</span>
+ <span class="o">|</span>      <span class="n">Return</span> <span class="nb">repr</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span><span class="o">.</span>
+ <span class="o">|</span>
+ <span class="o">|</span>  <span class="fm">__setattr__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">value</span><span class="p">,</span> <span class="o">/</span><span class="p">)</span>
+ <span class="o">|</span>      <span class="n">Implement</span> <span class="nb">setattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">value</span><span class="p">)</span><span class="o">.</span>
+ <span class="o">|</span>
+ <span class="o">|</span>  <span class="n">__setstate__</span><span class="p">(</span><span class="o">...</span><span class="p">)</span>
+ <span class="o">|</span>
+ <span class="o">|</span>  <span class="o">----------------------------------------------------------------------</span>
+ <span class="o">|</span>  <span class="n">Data</span> <span class="n">descriptors</span> <span class="n">defined</span> <span class="n">here</span><span class="p">:</span>
+ <span class="o">|</span>
+ <span class="o">|</span>  <span class="vm">__dict__</span>
+ <span class="o">|</span>
+ <span class="o">|</span>  <span class="n">args</span>
+ <span class="o">|</span>      <span class="nb">tuple</span> <span class="n">of</span> <span class="n">arguments</span> <span class="n">to</span> <span class="n">future</span> <span class="n">partial</span> <span class="n">calls</span>
+ <span class="o">|</span>
+ <span class="o">|</span>  <span class="n">func</span>
+ <span class="o">|</span>      <span class="n">function</span> <span class="nb">object</span> <span class="n">to</span> <span class="n">use</span> <span class="ow">in</span> <span class="n">future</span> <span class="n">partial</span> <span class="n">calls</span>
+ <span class="o">|</span>
+ <span class="o">|</span>  <span class="n">keywords</span>
+ <span class="o">|</span>      <span class="n">dictionary</span> <span class="n">of</span> <span class="n">keyword</span> <span class="n">arguments</span> <span class="n">to</span> <span class="n">future</span> <span class="n">partial</span> <span class="n">calls</span>
+</pre></div>
+<p>其中定义<code>partial(func, *args, **keywords)</code></p>
+<ul>
+<li>func，接收一个函数，可以是内置函数，也可以是自定义函数</li>
+<li>*args，就是大家熟悉的可变参数了，例如内置函数sum(1,2,3,4,5)里的参数</li>
+<li>**kwargs，同样是熟悉的关键字参数，例如内置工厂函数int('10010', base=10)，默认值是10十进制转换</li>
+</ul>
+<p><em>小小地分析下源码</em></p>
+<p>找个项目引入下，然后追进去看下源码，首先先看<code>__new__</code></p>
+<div class="highlight"><pre><span></span><span class="k">class</span> <span class="nc">partial</span><span class="p">:</span>
+    <span class="sd">&quot;&quot;&quot;New function with partial application of the given arguments</span>
+<span class="sd">    and keywords.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="c1"># slots可以看另外篇文章, 简单的讲就是定义了类实例只能有这些属性</span>
+    <span class="vm">__slots__</span> <span class="o">=</span> <span class="s2">&quot;func&quot;</span><span class="p">,</span> <span class="s2">&quot;args&quot;</span><span class="p">,</span> <span class="s2">&quot;keywords&quot;</span><span class="p">,</span> <span class="s2">&quot;__dict__&quot;</span><span class="p">,</span> <span class="s2">&quot;__weakref__&quot;</span>
+
+    <span class="k">def</span> <span class="fm">__new__</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">keywords</span><span class="p">):</span>
+        <span class="c1"># 刚开始就是一些简单的参数校验</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">args</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s2">&quot;descriptor &#39;__new__&#39; of partial needs an argument&quot;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">args</span><span class="p">)</span> <span class="o">&lt;</span> <span class="mi">2</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s2">&quot;type &#39;partial&#39; takes at least one argument&quot;</span><span class="p">)</span>
+        <span class="bp">cls</span><span class="p">,</span> <span class="n">func</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span> <span class="o">=</span> <span class="n">args</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">callable</span><span class="p">(</span><span class="n">func</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s2">&quot;the first argument must be callable&quot;</span><span class="p">)</span>
+        <span class="n">args</span> <span class="o">=</span> <span class="nb">tuple</span><span class="p">(</span><span class="n">args</span><span class="p">)</span>
+
+        <span class="c1"># 实例方法有个__func__属性，指向实例方法底层的真正函数, 在下面也有个例子</span>
+        <span class="c1"># 不过解释的不好, 自己debug打断点观察  partial(int) partial(sum)观察下func</span>
+        <span class="c1"># 感觉是想将原有的func属性添加回来，partial(int)下func是个类？ </span>
+        <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">func</span><span class="p">,</span> <span class="s2">&quot;func&quot;</span><span class="p">):</span>
+            <span class="n">args</span> <span class="o">=</span> <span class="n">func</span><span class="o">.</span><span class="n">args</span> <span class="o">+</span> <span class="n">args</span>
+            <span class="n">tmpkw</span> <span class="o">=</span> <span class="n">func</span><span class="o">.</span><span class="n">keywords</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+            <span class="n">tmpkw</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">keywords</span><span class="p">)</span>
+            <span class="n">keywords</span> <span class="o">=</span> <span class="n">tmpkw</span>
+            <span class="k">del</span> <span class="n">tmpkw</span>
+            <span class="n">func</span> <span class="o">=</span> <span class="n">func</span><span class="o">.</span><span class="n">func</span>
+
+        <span class="bp">self</span> <span class="o">=</span> <span class="nb">super</span><span class="p">(</span><span class="n">partial</span><span class="p">,</span> <span class="bp">cls</span><span class="p">)</span><span class="o">.</span><span class="fm">__new__</span><span class="p">(</span><span class="bp">cls</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">func</span> <span class="o">=</span> <span class="n">func</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">args</span> <span class="o">=</span> <span class="n">args</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">keywords</span> <span class="o">=</span> <span class="n">keywords</span>
+        <span class="k">return</span> <span class="bp">self</span>
+</pre></div>
+<h5>slots类属性简单笔记</h5>
+<p>默认情况下，Python会在各个实例中的<code>__dict__</code>字典里存储实例属性，为了使底层的散列表提升访问速度，字典会消耗很多的内存。如果要处理有着数百万个属性不多的实例，通过<code>__slots__</code>类属性可以节省大量内存，方法是让解释器在元组中存储实例熟悉，而不是字典。</p>
+<p>其中 <code>__slots__</code> 定义了， 类实例只能有这些属性，不能动态的添加其他属性，顺便贴个简单的例子。</p>
+<div class="highlight"><pre><span></span><span class="k">class</span> <span class="nc">Test1</span><span class="p">:</span>
+    <span class="c1"># 只能定义name和age两个属性</span>
+    <span class="vm">__slots__</span> <span class="o">=</span> <span class="p">(</span><span class="s2">&quot;name&quot;</span><span class="p">,</span> <span class="s2">&quot;age&quot;</span><span class="p">)</span>
+
+<span class="k">class</span> <span class="nc">Test2</span><span class="p">(</span><span class="n">Test1</span><span class="p">):</span>
+    <span class="c1"># slots对继承的子类是不起作用的</span>
+    <span class="k">pass</span>
+
+<span class="k">class</span> <span class="nc">Test3</span><span class="p">(</span><span class="n">Test1</span><span class="p">):</span>
+    <span class="c1"># 除非子类也定义了slots, 那么允许定义的属性就是 自己的 + 父亲的</span>
+    <span class="vm">__slots__</span> <span class="o">=</span> <span class="p">(</span><span class="s2">&quot;sex&quot;</span><span class="p">,</span> <span class="p">)</span>
+
+<span class="n">test1</span> <span class="o">=</span> <span class="n">Test1</span><span class="p">()</span>
+<span class="n">test1</span><span class="o">.</span><span class="n">name</span> <span class="o">=</span> <span class="s1">&#39;bin&#39;</span>
+<span class="c1"># test1.sex = &#39;1&#39;  # AttributeError: &#39;Test1&#39; object has no attribute &#39;sex&#39;, 会报错, slots中没有这个属性</span>
+
+<span class="n">test2</span> <span class="o">=</span> <span class="n">Test2</span><span class="p">()</span>
+<span class="n">test2</span><span class="o">.</span><span class="n">name</span> <span class="o">=</span> <span class="s1">&#39;bin&#39;</span>
+<span class="n">test2</span><span class="o">.</span><span class="n">sex</span> <span class="o">=</span> <span class="s1">&#39;1&#39;</span>  <span class="c1"># slots对继承的子类是不起作用的, 除非子类也定义slots</span>
+
+<span class="n">test3</span> <span class="o">=</span> <span class="n">Test3</span><span class="p">()</span>
+<span class="n">test3</span><span class="o">.</span><span class="n">name</span> <span class="o">=</span> <span class="s1">&#39;bin&#39;</span>
+<span class="n">test3</span><span class="o">.</span><span class="n">sex</span> <span class="o">=</span> <span class="s1">&#39;1&#39;</span>
+<span class="c1"># test3.lover = &#39;nana&#39;  # AttributeError: &#39;Test3&#39; object has no attribute &#39;lover&#39;, 会报错, 子类父类中都没</span>
+</pre></div>
+<p>几个问题：</p>
+<ol>
+<li>每个子类都要定义<code>__slots__</code>属性，解释器会忽略继承来的这个属性</li>
+<li>实例只能用于<code>__slots__</code>里列出的属性，除非把<code>__dict__</code>加到<code>__slots__</code>中，不过这样就失去了节省内存的功效了</li>
+<li>如果不把<code>__wreakref__</code>加到<code>__slots__</code>中，实例就不能作为弱引用的目标。</li>
+</ol>
+<p><strong>这里解释的不到位，留坑日后填吧</strong></p>
+<p>对于实例方法有个属性<code>__func__</code>，这个有点绕，这个属性会返回该方法所对应的底层函数，注意看下面例子的输出。同时这个属性可以访问到这个函数的一些特殊属性。</p>
+<p>下面test1 和 test2的func方法内存地址都不一样，但是底层的<code>__func__</code>是一样的。</p>
+<div class="highlight"><pre><span></span><span class="o">&gt;&gt;&gt;</span> <span class="k">class</span> <span class="nc">Test</span><span class="p">:</span>
+<span class="o">...</span>     <span class="k">def</span> <span class="nf">func</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="o">...</span>         <span class="k">print</span><span class="p">(</span><span class="mi">1111</span><span class="p">)</span>
+<span class="o">...</span>
+<span class="o">&gt;&gt;&gt;</span>
+<span class="o">&gt;&gt;&gt;</span> <span class="n">Test</span><span class="o">.</span><span class="n">func</span>
+<span class="o">&lt;</span><span class="n">function</span> <span class="n">Test</span><span class="o">.</span><span class="n">func</span> <span class="n">at</span> <span class="mh">0x000001DFE191FEA0</span><span class="o">&gt;</span>
+<span class="o">&gt;&gt;&gt;</span>
+<span class="o">&gt;&gt;&gt;</span> <span class="n">test1</span> <span class="o">=</span> <span class="n">Test</span><span class="p">()</span>
+<span class="o">&gt;&gt;&gt;</span> <span class="n">test2</span> <span class="o">=</span> <span class="n">Test</span><span class="p">()</span>
+<span class="o">&gt;&gt;&gt;</span>
+<span class="o">&gt;&gt;&gt;</span> <span class="n">test1</span><span class="o">.</span><span class="n">func</span>
+<span class="o">&lt;</span><span class="n">bound</span> <span class="n">method</span> <span class="n">Test</span><span class="o">.</span><span class="n">func</span> <span class="n">of</span> <span class="o">&lt;</span><span class="n">__main__</span><span class="o">.</span><span class="n">Test</span> <span class="nb">object</span> <span class="n">at</span> <span class="mh">0x000001DFE192E390</span><span class="o">&gt;&gt;</span>
+<span class="o">&gt;&gt;&gt;</span> <span class="n">test2</span><span class="o">.</span><span class="n">func</span>
+<span class="o">&lt;</span><span class="n">bound</span> <span class="n">method</span> <span class="n">Test</span><span class="o">.</span><span class="n">func</span> <span class="n">of</span> <span class="o">&lt;</span><span class="n">__main__</span><span class="o">.</span><span class="n">Test</span> <span class="nb">object</span> <span class="n">at</span> <span class="mh">0x000001DFE192E3C8</span><span class="o">&gt;&gt;</span>
+<span class="o">&gt;&gt;&gt;</span>
+<span class="o">&gt;&gt;&gt;</span> <span class="n">test1</span><span class="o">.</span><span class="n">func</span><span class="o">.</span><span class="vm">__func__</span>
+<span class="o">&lt;</span><span class="n">function</span> <span class="n">Test</span><span class="o">.</span><span class="n">func</span> <span class="n">at</span> <span class="mh">0x000001DFE191FEA0</span><span class="o">&gt;</span>
+<span class="o">&gt;&gt;&gt;</span> <span class="n">test2</span><span class="o">.</span><span class="n">func</span><span class="o">.</span><span class="vm">__func__</span>
+<span class="o">&lt;</span><span class="n">function</span> <span class="n">Test</span><span class="o">.</span><span class="n">func</span> <span class="n">at</span> <span class="mh">0x000001DFE191FEA0</span><span class="o">&gt;</span>
+<span class="o">&gt;&gt;&gt;</span>
+<span class="o">&gt;&gt;&gt;</span> <span class="n">test1</span><span class="o">.</span><span class="n">func</span><span class="o">.</span><span class="vm">__func__</span><span class="o">.</span><span class="vm">__code__</span>
+<span class="o">&lt;</span><span class="n">code</span> <span class="nb">object</span> <span class="n">func</span> <span class="n">at</span> <span class="mh">0x000001DFE1843B70</span><span class="p">,</span> <span class="nb">file</span> <span class="s2">&quot;&lt;stdin&gt;&quot;</span><span class="p">,</span> <span class="n">line</span> <span class="mi">2</span><span class="o">&gt;</span>
+<span class="o">&gt;&gt;&gt;</span> <span class="n">test2</span><span class="o">.</span><span class="n">func</span><span class="o">.</span><span class="vm">__func__</span><span class="o">.</span><span class="vm">__code__</span>
+<span class="o">&lt;</span><span class="n">code</span> <span class="nb">object</span> <span class="n">func</span> <span class="n">at</span> <span class="mh">0x000001DFE1843B70</span><span class="p">,</span> <span class="nb">file</span> <span class="s2">&quot;&lt;stdin&gt;&quot;</span><span class="p">,</span> <span class="n">line</span> <span class="mi">2</span><span class="o">&gt;</span>
+</pre></div>
+<p><strong>补充用法</strong></p>
+<p>我们在一些情况下，需要传递函数对象出去，一般来说，这种情况下可以把方法名直接传过去，不带()不调用即可，但是假如需要传递的是 <code>需要带参数</code>的方法名呢，这时候就可以使用到偏函数了，下面贴一段公司代码~</p>
+<p>对于<code>_shutdown_server_ioloop</code>函数有<code>_server</code>参数，可以使用偏函数包装一下，再传入那个偏函数</p>
+<div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">shutdown</span><span class="p">(</span><span class="n">app</span><span class="p">,</span> <span class="n">server</span><span class="p">,</span> <span class="n">ignore_ioloop</span><span class="o">=</span><span class="bp">False</span><span class="p">):</span>
+    <span class="k">if</span> <span class="n">app</span><span class="o">.</span><span class="n">settings</span><span class="p">[</span><span class="s1">&#39;redis&#39;</span><span class="p">]</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span><span class="p">:</span>
+        <span class="n">app</span><span class="o">.</span><span class="n">settings</span><span class="p">[</span><span class="s1">&#39;redis&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+    <span class="k">if</span> <span class="n">app</span><span class="o">.</span><span class="n">settings</span><span class="p">[</span><span class="s1">&#39;mysql&#39;</span><span class="p">][</span><span class="s1">&#39;web&#39;</span><span class="p">]</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span><span class="p">:</span>
+        <span class="n">app</span><span class="o">.</span><span class="n">settings</span><span class="p">[</span><span class="s1">&#39;mysql&#39;</span><span class="p">][</span><span class="s1">&#39;web&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+    <span class="k">if</span> <span class="n">app</span><span class="o">.</span><span class="n">settings</span><span class="p">[</span><span class="s1">&#39;mysql&#39;</span><span class="p">][</span><span class="s1">&#39;data&#39;</span><span class="p">]</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span><span class="p">:</span>
+        <span class="n">app</span><span class="o">.</span><span class="n">settings</span><span class="p">[</span><span class="s1">&#39;mysql&#39;</span><span class="p">][</span><span class="s1">&#39;data&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+
+    <span class="k">for</span> <span class="n">task</span> <span class="ow">in</span> <span class="n">asyncio</span><span class="o">.</span><span class="n">Task</span><span class="o">.</span><span class="n">all_tasks</span><span class="p">():</span>
+        <span class="n">logging</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s1">&#39;Cancel task: </span><span class="si">%s</span><span class="s1">&#39;</span><span class="p">,</span> <span class="n">task</span><span class="p">)</span>
+        <span class="n">task</span><span class="o">.</span><span class="n">cancel</span><span class="p">()</span>
+
+    <span class="k">def</span> <span class="nf">_shutdown_server_ioloop</span><span class="p">(</span><span class="n">_server</span><span class="p">):</span>
+        <span class="n">_server</span><span class="o">.</span><span class="n">stop</span><span class="p">()</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">ignore_ioloop</span><span class="p">:</span>
+            <span class="n">ioloop</span><span class="o">.</span><span class="n">IOLoop</span><span class="o">.</span><span class="n">current</span><span class="p">()</span><span class="o">.</span><span class="n">stop</span><span class="p">()</span>
+
+    <span class="n">_shutdown</span> <span class="o">=</span> <span class="n">functools</span><span class="o">.</span><span class="n">partial</span><span class="p">(</span><span class="n">_shutdown_server_ioloop</span><span class="p">,</span> <span class="n">server</span><span class="p">)</span>
+    <span class="n">ioloop</span><span class="o">.</span><span class="n">IOLoop</span><span class="o">.</span><span class="n">current</span><span class="p">()</span><span class="o">.</span><span class="n">add_callback_from_signal</span><span class="p">(</span><span class="n">_shutdown</span><span class="p">)</span>
+</pre></div>
+
+            
+            
+            
+
+        </section>
+
+        <aside id="sidebar">
+            <blockquote class="route">关于我</blockquote>
+            <p>19本科毕业生，代码的搬运工，此界面灵感来自公众号【运维咖啡吧】</p>
+            
+            <blockquote class="route">Github地址</blockquote>
+            <a href="https://github.com/enjoy-binbin">
+                <img border="0" src="https://avatars2.githubusercontent.com/u/22811481" width="100%" height="100%" alt="enjoy-binbin"/>
+            </a>
+            
+            
+        </aside>
+    </div>
+</div>
+</body>
+
+</html>

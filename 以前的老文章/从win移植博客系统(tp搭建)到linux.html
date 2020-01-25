@@ -1,0 +1,64 @@
+
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta name="theme-color" content="#2879d0"/>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1"/>
+    <meta name="copyright" content="©2020 测试所有"/>
+    <link rel="stylesheet" href="/css/style.min.css" media="screen" type="text/css"/>
+
+    <!-- Begin SEO tag -->
+    <title>从win移植博客系统(tp搭建)到linux</title>
+    <meta property="og:locale" content="zh_CN"/>
+    <meta property="og:type" content="article"/>
+    <meta property="og:title" content="从win移植博客系统(tp搭建)到linux"/>
+    <meta property="og:description" content="从win移植博客系统(tp搭建)到linux"/>
+    <meta property="og:url" content="#"/>
+    <meta property="og:site_name" content="从win移植博客系统(tp搭建)到linux"/>
+    <meta name="description" content="从win移植博客系统(tp搭建)到linux"/>
+    <!-- End SEO tag -->
+</head>
+
+<body>
+<header>
+    <div class="inner">
+        <a href="/">
+            <h1>彬彬同学丶</h1>
+        </a>
+        <h2>Choose what you love,love what you choose.</h2>
+    </div>
+</header>
+
+<div id="content-wrapper">
+    <div class="inner clearfix">
+        <section id="main-content">
+        
+            
+                <h1 id="art-title">从win移植博客系统(tp搭建)到linux</h1>
+            
+            
+            
+                <p><span style="font-size: 16px;line-height: 27px"></span></p><p>博客网站建立初,我是建立在腾讯云学生优惠服务器内的,学生实名认证后一块钱一个月</p><p>头开始是选用的window server 2012 (没记错的话) 这个系统, 最先开始配置环境的时候,折腾了很久很久, &nbsp;一开始是使用的 整合包 , 然后发现问题很多 , 于是又改回 手动自己手动配置 apache php mysql &nbsp;由于是低端服务器, 环境也比不上自己的 实体笔记本,性能也远远不如笔记本快, 当时配的不要不要的, 时长卡机..最先开始也是自己拿来玩</p><p>后面写了这个博客系统, &nbsp;前台后台也都是我自己一个人写的 , 框架方面用的是 tp 和 bootdrap完成后, 把博客网站挂在了 腾讯云上 想试试,结果发现速度巨慢, 还时常进不去网址, ping是能ping通, 也百度了, 也研究了, 还是解决不了</p><p>后面头一热, 直接重装了 linux centos6.7 &nbsp;因为之前刚学完linux &nbsp;实体机上的虚拟机也是 使用的centos67同时对 服务器感到失望, 所以便舍弃了一切 &nbsp;重装上了linux</p><p><strong>linux上配置环境很简单, 直接yum</strong></p><p style="padding: 9.5px;margin: 0 0 10px;font-size: 13px;color: #333;background-color: #f5f5f5;border: 1px solid #ccc;border-radius: 4px;">yum install -y httpd php php-fpm mysql mysql-server php-mysql</p><p><strong>然后启动服务</strong></p><p style="padding: 9.5px;margin: 0 0 10px;font-size: 13px;color: #333;background-color: #f5f5f5;border: 1px solid #ccc;border-radius: 4px;">service httpd start &nbsp;service mysqld start &nbsp;service php-fpm start</p><p><strong>服务启动成功检查下服务的运行</strong></p><p style="padding: 9.5px;margin: 0 0 10px;font-size: 13px;color: #333;background-color: #f5f5f5;border: 1px solid #ccc;border-radius: 4px;">netstat -tunlp</p><p>这样我们可以看到httpd(也就是apache服务)监听80端口，mysql监听3306端口，php-fpm监听9000端口，并且都已经正常启动</p><p>这时，我们的环境已经基本搭建好了，大家已经可以在浏览器中访问服务器的公网ip，可以看到apache的测试页面，就说明你已经成功了。为了保险起见，也建议大家进入到apache的web根目录：</p><p><strong>/var/www/html 中自己写一个最简单的php页面.</strong></p><p style="padding: 9.5px;margin: 0 0 10px;font-size: 13px;color: #333;background-color: #f5f5f5;border: 1px solid #ccc;border-radius: 4px;">cd /var/www/html &nbsp;vi phpinfo.php &nbsp;&lt;?php &nbsp;&nbsp;phpinfo(); &nbsp;?&gt;</p><p>外网访问 ip/phpinfo.php &nbsp;显示phpinfo 成功即可</p><p><strong>我们要为mysql设置相应的用户去访问管理，之前我们已经启动了mysqld服务，因此此时我们需要给mysql设定一个初始的root密码，可以让root用户去访问数据库</strong></p><p style="padding: 9.5px;margin: 0 0 10px;font-size: 13px;color: #333;background-color: #f5f5f5;border: 1px solid #ccc;border-radius: 4px;">mysqladmin -u root password “XXXXXXXX”</p><p>这样我们就设置好了mysql的密码，可以输入 mysql -u root -p ，然后再输入刚刚设定好的密码，就可以进入到数据库中</p><p>然后移植博客系统, 进行简单的权限设置 &nbsp;网站运行了</p><p>发现速度比window不知道提高了多少, 以前win是时常当机, linux不会, 网站运行速度也很快带宽没变的, 感觉linux上做服务器, 是真的比window好</p><p>然后我使用window系列也有10多年了 &nbsp;实体机也是win8 &nbsp;环境也配的好辛苦, 所以实际上还是使用的window对linux的学习, 只能放在 腾讯云服务器 和 虚拟机上了</p><p>good day . thanks for</p><p><span style="font-size: 16px;line-height: 27px"></span></p><p>博客网站建立初,我是建立在腾讯云学生优惠服务器内的,学生实名认证后一块钱一个月</p><p>头开始是选用的window server 2012 (没记错的话) 这个系统, 最先开始配置环境的时候,折腾了很久很久, &nbsp;一开始是使用的 整合包 , 然后发现问题很多 , 于是又改回 手动自己手动配置 apache php mysql &nbsp;由于是低端服务器, 环境也比不上自己的 实体笔记本,性能也远远不如笔记本快, 当时配的不要不要的, 时长卡机..最先开始也是自己拿来玩</p><p>后面写了这个博客系统, &nbsp;前台后台也都是我自己一个人写的 , 框架方面用的是 tp 和 bootdrap完成后, 把博客网站挂在了 腾讯云上 想试试,结果发现速度巨慢, 还时常进不去网址, ping是能ping通, 也百度了, 也研究了, 还是解决不了</p><p>后面头一热, 直接重装了 linux centos6.7 &nbsp;因为之前刚学完linux &nbsp;实体机上的虚拟机也是 使用的centos67同时对 服务器感到失望, 所以便舍弃了一切 &nbsp;重装上了linux</p><p><strong>linux上配置环境很简单, 直接yum</strong></p><p style="padding: 9.5px;margin: 0 0 10px;font-size: 13px;color: #333;background-color: #f5f5f5;border: 1px solid #ccc;border-radius: 4px;">yum install -y httpd php php-fpm mysql mysql-server php-mysql</p><p><strong>然后启动服务</strong></p><p style="padding: 9.5px;margin: 0 0 10px;font-size: 13px;color: #333;background-color: #f5f5f5;border: 1px solid #ccc;border-radius: 4px;">service httpd start &nbsp;service mysqld start &nbsp;service php-fpm start</p><p><strong>服务启动成功检查下服务的运行</strong></p><p style="padding: 9.5px;margin: 0 0 10px;font-size: 13px;color: #333;background-color: #f5f5f5;border: 1px solid #ccc;border-radius: 4px;">netstat -tunlp</p><p>这样我们可以看到httpd(也就是apache服务)监听80端口，mysql监听3306端口，php-fpm监听9000端口，并且都已经正常启动</p><p>这时，我们的环境已经基本搭建好了，大家已经可以在浏览器中访问服务器的公网ip，可以看到apache的测试页面，就说明你已经成功了。为了保险起见，也建议大家进入到apache的web根目录：</p><p><strong>/var/www/html 中自己写一个最简单的php页面.</strong></p><p style="padding: 9.5px;margin: 0 0 10px;font-size: 13px;color: #333;background-color: #f5f5f5;border: 1px solid #ccc;border-radius: 4px;">cd /var/www/html &nbsp;vi phpinfo.php &nbsp;&lt;?php &nbsp;&nbsp;phpinfo(); &nbsp;?&gt;</p><p>外网访问 ip/phpinfo.php &nbsp;显示phpinfo 成功即可</p><p><strong>我们要为mysql设置相应的用户去访问管理，之前我们已经启动了mysqld服务，因此此时我们需要给mysql设定一个初始的root密码，可以让root用户去访问数据库</strong></p><p style="padding: 9.5px;margin: 0 0 10px;font-size: 13px;color: #333;background-color: #f5f5f5;border: 1px solid #ccc;border-radius: 4px;">mysqladmin -u root password “XXXXXXXX”</p><p>这样我们就设置好了mysql的密码，可以输入 mysql -u root -p ，然后再输入刚刚设定好的密码，就可以进入到数据库中</p><p>然后移植博客系统, 进行简单的权限设置 &nbsp;网站运行了</p><p>发现速度比window不知道提高了多少, 以前win是时常当机, linux不会, 网站运行速度也很快带宽没变的, 感觉linux上做服务器, 是真的比window好</p><p>然后我使用window系列也有10多年了 &nbsp;实体机也是win8 &nbsp;环境也配的好辛苦, 所以实际上还是使用的window对linux的学习, 只能放在 腾讯云服务器 和 虚拟机上了</p><p>good day . thanks for look</p><p><br/> </p><p><br/> </p>
+            
+            
+            
+
+        </section>
+
+        <aside id="sidebar">
+            <blockquote class="route">关于我</blockquote>
+            <p>19本科毕业生，代码的搬运工，此界面灵感来自公众号【运维咖啡吧】</p>
+            
+            <blockquote class="route">Github地址</blockquote>
+            <a href="https://github.com/enjoy-binbin">
+                <img border="0" src="https://avatars2.githubusercontent.com/u/22811481" width="100%" height="100%" alt="enjoy-binbin"/>
+            </a>
+            
+            
+        </aside>
+    </div>
+</div>
+</body>
+
+</html>

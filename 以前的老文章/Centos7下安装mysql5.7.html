@@ -1,0 +1,103 @@
+
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta name="theme-color" content="#2879d0"/>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1"/>
+    <meta name="copyright" content="©2020 测试所有"/>
+    <link rel="stylesheet" href="/css/style.min.css" media="screen" type="text/css"/>
+
+    <!-- Begin SEO tag -->
+    <title>Centos7下安装mysql5.7</title>
+    <meta property="og:locale" content="zh_CN"/>
+    <meta property="og:type" content="article"/>
+    <meta property="og:title" content="Centos7下安装mysql5.7"/>
+    <meta property="og:description" content="Centos7下安装mysql5.7"/>
+    <meta property="og:url" content="#"/>
+    <meta property="og:site_name" content="Centos7下安装mysql5.7"/>
+    <meta name="description" content="Centos7下安装mysql5.7"/>
+    <!-- End SEO tag -->
+</head>
+
+<body>
+<header>
+    <div class="inner">
+        <a href="/">
+            <h1>彬彬同学丶</h1>
+        </a>
+        <h2>Choose what you love,love what you choose.</h2>
+    </div>
+</header>
+
+<div id="content-wrapper">
+    <div class="inner clearfix">
+        <section id="main-content">
+        
+            
+                <h1 id="art-title">Centos7下安装mysql5.7</h1>
+            
+            
+            
+                <p><h3 id="1配置yum源">1、配置YUM源</h3><p>在MySQL官网中下载YUM源rpm安装包：https://dev.mysql.com/downloads/repo/yum/</p><pre class="prettyprint">#&nbsp;下载mysql源安装包，&nbsp;如果没有wget&nbsp;就&nbsp;&nbsp;yun&nbsp;-y&nbsp;install&nbsp;wget
+&nbsp;&nbsp;&nbsp;&nbsp;wget&nbsp;<a href="http://dev.mysql.com/get/mysql57-community-release-el7-8.noarch.rpm&amp;nbsp">http://dev.mysql.com/get/mysql57-community-release-el7-8.noarch.rpm&amp;nbsp</a>;
+&nbsp;&nbsp;&nbsp;&nbsp;</p>
+<h1>&nbsp;安装mysql源</h1>
+<p>&nbsp;&nbsp;&nbsp;&nbsp;yum&nbsp;localinstall&nbsp;mysql57-community-release-el7-8.noarch.rpm
+&nbsp;&nbsp;&nbsp;&nbsp;</p>
+<h1>&nbsp;检查mysql源是否安装成功,&nbsp;检查可用的包</h1>
+<p>&nbsp;&nbsp;&nbsp;&nbsp;yum&nbsp;repolist&nbsp;enabled&nbsp;|&nbsp;grep&nbsp;&quot;mysql.<em>-community.</em>&quot;&lt;/pre&gt;<p><img src="/media/article/ueditor/图片_20180914171716_429.png" title="" alt="图片.png" style="width: 713px; height: 86px;" width="713" height="86"/> </p><p><br/> </p><h3 id="2安装mysql">2、安装MySQL</h3><pre class="prettyprint">#&nbsp;yum安装mysql
+&nbsp;&nbsp;&nbsp;&nbsp;yum&nbsp;-y&nbsp;install&nbsp;mysql-community-server
+&nbsp;&nbsp;&nbsp;&nbsp;</p>
+<h1>&nbsp;查看mysql运行状态</h1>
+<p>&nbsp;&nbsp;&nbsp;&nbsp;systemctl&nbsp;status&nbsp;mysqld
+&nbsp;&nbsp;&nbsp;</p>
+<h1>&nbsp;启动mysqld服务</h1>
+<p>&nbsp;&nbsp;&nbsp;&nbsp;systemctl&nbsp;start&nbsp;mysqld</p>
+<h1>&nbsp;设计开机启动</h1>
+<p>&nbsp;&nbsp;&nbsp;&nbsp;systemctl&nbsp;enable&nbsp;mysqld</p>
+<h1>&nbsp;重新载入systemd,&nbsp;扫描新的或有变动的部分</h1>
+<p>&nbsp;&nbsp;&nbsp;&nbsp;systemctl&nbsp;daemon-reload&lt;/pre&gt;<p><img src="/media/article/ueditor/图片_20180914180654_632.png" title="" alt="图片.png"/> </p><h3 id="5修改root本地登录密码">3、修改root登录密码</h3><p>mysql安装完成之后，会在 /var/log/mysqld.log 文件中给root生成了一个随机默认密码。</p><pre class="prettyprint">grep&nbsp;&#39;temporary&nbsp;password&#39;&nbsp;/var/log/mysqld.log</pre><p><img src="/media/article/ueditor/图片_20180914172531_327.png" title="" alt="图片.png"/> </p><p>使用这个密码进行登陆, mysql -uroot -p</p><p><br/> </p><p>修改root密码（两种方式都可以）：</p><pre class="prettyprint">mysql&gt;&nbsp;ALTER&nbsp;USER&nbsp;&#39;root&#39;@&#39;localhost&#39;&nbsp;IDENTIFIED&nbsp;BY&nbsp;&#39;MyNewPass1!&#39;;</pre><pre class="prettyprint">mysql&gt;&nbsp;set&nbsp;password&nbsp;for&nbsp;&#39;root&#39;@&#39;localhost&#39;=password(&#39;MyNewPass1!&#39;);</pre><p><br/> </p><p>注意：在5.7版本，mysql有新增安全策略，密码需要设置的大小写，数字，字符，否则会报错<br/> </p><p><img src="/media/article/ueditor/图片_20180914172954_481.png" title="" alt="图片.png" style="width: 782px; height: 57px;" width="782" height="57"/> </p><p><br/> </p><pre class="prettyprint">#&nbsp;通过show命令查看mysql密码策略的相关信息
+mysql&gt;&nbsp;show&nbsp;variables&nbsp;like&nbsp;&#39;%password%&#39;;</pre><p><img src="/media/article/ueditor/图片_20180914173118_636.png" title="" alt="图片.png"/> </p><p><br/> </p><h3 id="5修改root本地登录密码">4、修改密码策略</h3><pre class="prettyprint">#&nbsp;修改/etc/my.cnf&nbsp;配置文件
+&nbsp;&nbsp;&nbsp;&nbsp;yum&nbsp;-y&nbsp;install&nbsp;vim
+&nbsp;&nbsp;&nbsp;&nbsp;vim&nbsp;/etc/my.cnf
+&nbsp;&nbsp;&nbsp;&nbsp;</p>
+<h1>&nbsp;选择0（LOW），1（MEDIUM），2（STRONG）其中一种，选择2需要提供密码字典文件</h1>
+<p>&nbsp;&nbsp;&nbsp;&nbsp;validate_password_policy=0
+&nbsp;&nbsp;&nbsp;&nbsp;</p>
+<h1>&nbsp;如果不需要密码策略，禁用密码策略即可</h1>
+<p>&nbsp;&nbsp;&nbsp;&nbsp;validate_password=off
+&nbsp;&nbsp;&nbsp;&nbsp;</p>
+<h1>&nbsp;重新启动mysql服务使配置生效：</h1>
+<p>&nbsp;&nbsp;&nbsp;&nbsp;systemctl&nbsp;restart&nbsp;mysqld&lt;/pre&gt;<p><br/> </p><p>由于是实验环境，取消了密码策略，如下可以设置简单密码了<br/> </p><p><img src="/media/article/ueditor/图片_20180914174504_900.png" title="" alt="图片.png"/> </p><p><br/> </p><p><img src="/media/article/ueditor/图片_20180914174815_157.png" title="" alt="图片.png" style="width: 787px; height: 105px;" width="787" height="105"/> </p><p><br/> </p><h3 id="5修改root本地登录密码">4、补充<br/> </h3><p><strong>默认配置文件路径：</strong></p><p>配置文件：/etc/my.cnf <br/>日志文件：/var/log//var/log/mysqld.log <br/>服务启动脚本：/usr/lib/systemd/system/mysqld.service <br/>socket文件：/var/run/mysqld/mysqld.pid</p><p><br/> </p><p><strong>如果忘记root密码：</strong></p><pre class="prettyprint">#&nbsp;修改配置文件&nbsp;/etc/my.cnf&nbsp;在&nbsp;[mysqld]&nbsp;段中加入这行，跳过密码检查
+&nbsp;&nbsp;&nbsp;&nbsp;skip-grant-tables&nbsp;
+&nbsp;&nbsp;&nbsp;&nbsp;</p>
+<h1>&nbsp;这时便不需要密码也可以登陆mysql</h1>
+<p>&nbsp;&nbsp;&nbsp;&nbsp;mysql&nbsp;&nbsp;-uroot&nbsp;-p
+&nbsp;&nbsp;&nbsp;&nbsp;</p>
+<h1>&nbsp;设置密码和刷新privileges</h1>
+<p>&nbsp;&nbsp;&nbsp;&nbsp;update&nbsp;mysql.user&nbsp;set&nbsp;authentication_string=password(&#39;123456&#39;)&nbsp;where&nbsp;user=&#39;root&#39;;&nbsp;&nbsp;&nbsp;
+&nbsp;&nbsp;&nbsp;&nbsp;flush&nbsp;privileges;&lt;/pre&gt;<p><img src="http://127.0.0.1:8001/media/article/ueditor/图片_20180914175627_550.png" title="" alt="图片.png"/> </p><p><br/> </p></p>
+
+            
+            
+            
+
+        </section>
+
+        <aside id="sidebar">
+            <blockquote class="route">关于我</blockquote>
+            <p>19本科毕业生，代码的搬运工，此界面灵感来自公众号【运维咖啡吧】</p>
+            
+            <blockquote class="route">Github地址</blockquote>
+            <a href="https://github.com/enjoy-binbin">
+                <img border="0" src="https://avatars2.githubusercontent.com/u/22811481" width="100%" height="100%" alt="enjoy-binbin"/>
+            </a>
+            
+            
+        </aside>
+    </div>
+</div>
+</body>
+
+</html>

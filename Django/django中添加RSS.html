@@ -1,0 +1,111 @@
+
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta name="theme-color" content="#2879d0"/>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1"/>
+    <meta name="copyright" content="©2020 测试所有"/>
+    <link rel="stylesheet" href="/css/style.min.css" media="screen" type="text/css"/>
+
+    <!-- Begin SEO tag -->
+    <title>django中添加RSS</title>
+    <meta property="og:locale" content="zh_CN"/>
+    <meta property="og:type" content="article"/>
+    <meta property="og:title" content="django中添加RSS"/>
+    <meta property="og:description" content="django中添加RSS"/>
+    <meta property="og:url" content="#"/>
+    <meta property="og:site_name" content="django中添加RSS"/>
+    <meta name="description" content="django中添加RSS"/>
+    <!-- End SEO tag -->
+</head>
+
+<body>
+<header>
+    <div class="inner">
+        <a href="/">
+            <h1>彬彬同学丶</h1>
+        </a>
+        <h2>Choose what you love,love what you choose.</h2>
+    </div>
+</header>
+
+<div id="content-wrapper">
+    <div class="inner clearfix">
+        <section id="main-content">
+        
+            
+                <h1 id="art-title">django中添加RSS</h1>
+            
+            
+            
+                <p>先简单介绍下RSS:</p>
+<blockquote><p>RSS（简易信息聚合）是一种消息来源格式规范，用以聚合经常发布更新数据的网站，例如博客文章、新闻、音频或视频的网摘。RSS文件（或称做摘要、网络摘要、或频更新，提供到频道）包含全文或是节录的文字，再加上发布者所订阅之网摘数据和授权的元数据。</p>
+</blockquote>
+<p>其实就是一种聚合阅读，这样可以用feedly等工具来订阅你喜欢的网站，这样他们的网站更新了之后你就可以通过feedly这种工具来阅读更新的内容，而不用跑到网站上面去查看。</p>
+<p>﻿官方文档地址: <a href="https://docs.djangoproject.com/en/2.1/ref/contrib/syndication/">https://docs.djangoproject.com/en/2.1/ref/contrib/syndication/</a></p>
+<p>一个简单的RSS-feed功能</p>
+<p>在binblog目录下(与settings平级)，创建feeds.py文件</p>
+<div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">django.contrib.syndication.views</span> <span class="kn">import</span> <span class="n">Feed</span>
+
+<span class="kn">from</span> <span class="nn">blog.models</span> <span class="kn">import</span> <span class="n">Article</span>
+
+
+<span class="k">class</span> <span class="nc">BinBlogFeed</span><span class="p">(</span><span class="n">Feed</span><span class="p">):</span>
+    <span class="n">title</span> <span class="o">=</span> <span class="s1">&#39;彬彬博客&#39;</span>  <span class="c1"># xml里的 title, link, desc标签内容</span>
+    <span class="n">link</span> <span class="o">=</span> <span class="s1">&#39;/feed/&#39;</span>
+    <span class="n">description</span> <span class="o">=</span> <span class="s1">&#39;彬彬博客Feed&#39;</span>
+
+    <span class="k">def</span> <span class="nf">items</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; returns a list of objects that should be included in the feed as &lt;item&gt; elements. &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="n">Article</span><span class="o">.</span><span class="n">objects</span><span class="o">.</span><span class="n">order_by</span><span class="p">(</span><span class="s1">&#39;-add_time&#39;</span><span class="p">)[:</span><span class="mi">5</span><span class="p">]</span>
+
+    <span class="k">def</span> <span class="nf">item_title</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">item</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">item</span><span class="o">.</span><span class="n">title</span>
+
+    <span class="k">def</span> <span class="nf">item_description</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">item</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">item</span><span class="o">.</span><span class="n">content</span>
+
+    <span class="k">def</span> <span class="nf">item_link</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">item</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">item</span><span class="o">.</span><span class="n">get_absolute_url</span><span class="p">()</span>
+
+    <span class="k">def</span> <span class="nf">item_author_name</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">item</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">item</span><span class="o">.</span><span class="n">author</span><span class="o">.</span><span class="n">username</span>
+
+    <span class="k">def</span> <span class="nf">feed_copyright</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="s1">&#39;Copyright (c) 2019, Zhu Binbin&#39;</span>
+</pre></div>
+<p>urls.py下的配置</p>
+<div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">.feeds</span> <span class="kn">import</span> <span class="n">BinBlogFeed</span>
+
+<span class="n">urlpatterns</span> <span class="o">=</span> <span class="p">[</span>
+    <span class="o">...</span>
+    <span class="n">path</span><span class="p">(</span><span class="s1">&#39;feed/&#39;</span><span class="p">,</span> <span class="n">BinBlogFeed</span><span class="p">()),</span>
+<span class="p">]</span>
+</pre></div>
+<p>运行，浏览器打开127.0.0.1:8000/feed/，下载一段xml文本</p>
+<p>打开里面就是了，里面有很多元素都是可以自定义的</p>
+<p>参考文档: <a href="https://docs.djangoproject.com/en/2.1/ref/contrib/syndication/#feed-class-reference">https://docs.djangoproject.com/en/2.1/ref/contrib/syndication/#feed-class-reference</a></p>
+
+            
+            
+            
+
+        </section>
+
+        <aside id="sidebar">
+            <blockquote class="route">关于我</blockquote>
+            <p>19本科毕业生，代码的搬运工，此界面灵感来自公众号【运维咖啡吧】</p>
+            
+            <blockquote class="route">Github地址</blockquote>
+            <a href="https://github.com/enjoy-binbin">
+                <img border="0" src="https://avatars2.githubusercontent.com/u/22811481" width="100%" height="100%" alt="enjoy-binbin"/>
+            </a>
+            
+            
+        </aside>
+    </div>
+</div>
+</body>
+
+</html>

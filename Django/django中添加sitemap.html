@@ -1,0 +1,185 @@
+
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta name="theme-color" content="#2879d0"/>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1"/>
+    <meta name="copyright" content="©2020 测试所有"/>
+    <link rel="stylesheet" href="/css/style.min.css" media="screen" type="text/css"/>
+
+    <!-- Begin SEO tag -->
+    <title>django中添加sitemap</title>
+    <meta property="og:locale" content="zh_CN"/>
+    <meta property="og:type" content="article"/>
+    <meta property="og:title" content="django中添加sitemap"/>
+    <meta property="og:description" content="django中添加sitemap"/>
+    <meta property="og:url" content="#"/>
+    <meta property="og:site_name" content="django中添加sitemap"/>
+    <meta name="description" content="django中添加sitemap"/>
+    <!-- End SEO tag -->
+</head>
+
+<body>
+<header>
+    <div class="inner">
+        <a href="/">
+            <h1>彬彬同学丶</h1>
+        </a>
+        <h2>Choose what you love,love what you choose.</h2>
+    </div>
+</header>
+
+<div id="content-wrapper">
+    <div class="inner clearfix">
+        <section id="main-content">
+        
+            
+                <h1 id="art-title">django中添加sitemap</h1>
+            
+            
+            
+                <h3>为Django博客添加sitemap功能</h3>
+<p><code>sitemap</code>是 Google 最先引入的网站地图协议，维基百科的定义-&gt; A Sitemap is an <a href="https://en.wikipedia.org/wiki/XML">XML</a> file that lists the URLs for a site. 简单说就是个列出站点所有url的xml文件，方便网络爬虫抓去网站页面，它的作用简而言之就是优化搜索引擎的索引效率，详细的解释可以参考 维基百科。<code>https://en.wikipedia.org/wiki/Sitemaps</code>。网站地图sitemap一般放在域名根目录下，例如<code>www.xxxx.com/sitemap.xml</code></p>
+<p>Django文档地址:<code>https://docs.djangoproject.com/en/2.1/ref/contrib/sitemaps/</code></p>
+<h3>启用sitemap</h3>
+<p>在django的settings.py中的INSTALL_APPS中添加:</p>
+<pre><code>'django.contrib.sites',
+'django.contrib.sitemaps',
+</code></pre>
+<p>确认settings.py中的<code>TEMPLATES</code>设置包含<code>DjangoTemplates</code>后端，并将<code>APP_DIRS</code>选项设置为True。其实django默认配置就是这样的，只有当你曾经修改过这些设置，才需要调整回来。</p>
+<p>然后进行数据迁移</p>
+<div class="highlight"><pre><span></span>python ./manage.py makemigrations
+python ./manage.py migrate
+</pre></div>
+<p>在settings.py里添加一行设置 <code>SITE_ID = 1</code>指定当前站点，这个是数据库中django_site表对应的ID值</p>
+<p>而后登陆django后台，修改SITE为自己网站的域名和名称，或者在数据库端直接修改。之后在admin右上角会多一个查看站点的功能，点击后会自动跳转到对应的项目页面。</p>
+<div class="highlight"><pre><span></span><span class="c1"># admin后台配置注册 Site</span>
+<span class="kn">from</span> <span class="nn">django.contrib.sites.models</span> <span class="kn">import</span> <span class="n">Site</span>
+<span class="kn">from</span> <span class="nn">django.contrib.sites.admin</span> <span class="kn">import</span> <span class="n">SiteAdmin</span>
+
+<span class="n">admin</span><span class="o">.</span><span class="n">register</span><span class="p">(</span><span class="n">Site</span><span class="p">,</span> <span class="n">SiteAdmin</span><span class="p">)</span>  <span class="c1"># 站点, sitemap使用</span>
+</pre></div>
+<h3>官网中的使用 <a href="https://docs.djangoproject.com/en/2.1/ref/contrib/sitemaps/#django.contrib.sitemaps.GenericSitemap"><code>GenericSitemap</code></a>的例子，直接在url里配置</h3>
+<div class="highlight"><pre><span></span><span class="c1"># urls.py</span>
+<span class="kn">from</span> <span class="nn">django.contrib.sitemaps</span> <span class="kn">import</span> <span class="n">GenericSitemap</span>
+<span class="kn">from</span> <span class="nn">django.contrib.sitemaps.views</span> <span class="kn">import</span> <span class="n">sitemap</span>
+<span class="kn">from</span> <span class="nn">django.urls</span> <span class="kn">import</span> <span class="n">path</span>
+<span class="kn">from</span> <span class="nn">blog.models</span> <span class="kn">import</span> <span class="n">Article</span>
+
+<span class="n">info_dict</span> <span class="o">=</span> <span class="p">{</span>
+    <span class="s1">&#39;queryset&#39;</span><span class="p">:</span> <span class="n">Article</span><span class="o">.</span><span class="n">objects</span><span class="o">.</span><span class="n">all</span><span class="p">(),</span>
+    <span class="s1">&#39;date_field&#39;</span><span class="p">:</span> <span class="s1">&#39;add_time&#39;</span><span class="p">,</span>
+<span class="p">}</span>
+
+<span class="n">urlpatterns</span> <span class="o">=</span> <span class="p">[</span>
+    <span class="c1"># some generic view using info_dict</span>
+    <span class="c1"># ...</span>
+
+    <span class="c1"># the sitemap</span>
+    <span class="n">path</span><span class="p">(</span><span class="s1">&#39;sitemap.xml&#39;</span><span class="p">,</span> <span class="n">sitemap</span><span class="p">,</span>
+         <span class="p">{</span><span class="s1">&#39;sitemaps&#39;</span><span class="p">:</span> <span class="p">{</span><span class="s1">&#39;blog&#39;</span><span class="p">:</span> <span class="n">GenericSitemap</span><span class="p">(</span><span class="n">info_dict</span><span class="p">,</span> <span class="n">priority</span><span class="o">=</span><span class="mf">0.6</span><span class="p">)}},</span>
+         <span class="n">name</span><span class="o">=</span><span class="s1">&#39;django.contrib.sitemaps.views.sitemap&#39;</span><span class="p">),</span>
+<span class="p">]</span>
+<span class="c1"># 之后访问 127.0.0.1:8000/sitemap.xml</span>
+</pre></div>
+<h3>结合自己博客的代码编写</h3>
+<p>在项目目录下创建sitemaps.py文件（和settings.py同级）</p>
+<div class="highlight"><pre><span></span><span class="c1"># sitemaps.py</span>
+<span class="kn">from</span> <span class="nn">django.contrib.sitemaps</span> <span class="kn">import</span> <span class="n">Sitemap</span>
+<span class="kn">from</span> <span class="nn">django.urls</span> <span class="kn">import</span> <span class="n">reverse</span>
+<span class="kn">from</span> <span class="nn">blog.models</span> <span class="kn">import</span> <span class="n">Article</span>
+
+<span class="k">class</span> <span class="nc">ArticleSitemap</span><span class="p">(</span><span class="n">Sitemap</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot; 指向所有文章条目链接的Sitemap &quot;&quot;&quot;</span>
+    <span class="n">changefreq</span> <span class="o">=</span> <span class="s1">&#39;daily&#39;</span>  <span class="c1"># 更改频率，文档里查找可使用的属性值</span>
+    <span class="n">priority</span> <span class="o">=</span> <span class="mf">0.6</span>  <span class="c1"># 优先级</span>
+
+    <span class="k">def</span> <span class="nf">items</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="c1"># 必需，返回一个对象列表，可以自己filter过滤, 被其他方法属性调用</span>
+        <span class="k">return</span> <span class="n">Article</span><span class="o">.</span><span class="n">objects</span><span class="o">.</span><span class="n">all</span><span class="p">()</span>
+
+    <span class="k">def</span> <span class="nf">lastmod</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">obj</span><span class="p">):</span>
+        <span class="c1"># 可选，返回个datetime类型，表示items返回的每个对象的最后修改时间</span>
+        <span class="k">return</span> <span class="n">obj</span><span class="o">.</span><span class="n">modify_time</span>
+
+    <span class="k">def</span> <span class="nf">location</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">obj</span><span class="p">):</span>
+        <span class="c1"># 可选，返回每个obj对象的绝对路径，默认会调用obj.get_absolute_url方法</span>
+        <span class="k">return</span> <span class="n">reverse</span><span class="p">(</span><span class="s1">&#39;blog:article_detail&#39;</span><span class="p">,</span> <span class="n">kwargs</span><span class="o">=</span><span class="p">{</span><span class="s1">&#39;article_id&#39;</span><span class="p">:</span> <span class="n">obj</span><span class="o">.</span><span class="n">id</span><span class="p">})</span>
+
+<span class="c1"># urls.py</span>
+<span class="kn">from</span> <span class="nn">django.contrib.sitemaps.views</span> <span class="kn">import</span> <span class="n">sitemap</span>
+<span class="kn">from</span> <span class="nn">.sitemaps</span> <span class="kn">import</span> <span class="n">ArticleSitemap</span>
+
+<span class="n">sitemaps</span> <span class="o">=</span> <span class="p">{</span>
+    <span class="s1">&#39;article&#39;</span><span class="p">:</span> <span class="n">ArticleSitemap</span><span class="p">,</span>
+<span class="p">}</span>
+
+<span class="n">urlpatterns</span> <span class="o">=</span> <span class="p">[</span>
+    <span class="o">....</span>
+    <span class="n">path</span><span class="p">(</span><span class="s1">&#39;sitemap.xml&#39;</span><span class="p">,</span> <span class="n">sitemap</span><span class="p">,</span> <span class="p">{</span><span class="s1">&#39;sitemaps&#39;</span><span class="p">:</span> <span class="n">sitemaps</span><span class="p">}),</span>
+<span class="p">]</span>
+
+<span class="c1"># 之后访问 127.0.0.1:8000/sitemap.xml，看到一个xml文档</span>
+</pre></div>
+<h3>静态视图的Sitemap</h3>
+<div class="highlight"><pre><span></span><span class="c1"># sitemaps.py</span>
+<span class="kn">from</span> <span class="nn">django.contrib</span> <span class="kn">import</span> <span class="n">sitemaps</span>
+<span class="kn">from</span> <span class="nn">django.urls</span> <span class="kn">import</span> <span class="n">reverse</span>
+
+<span class="k">class</span> <span class="nc">StaticViewSitemap</span><span class="p">(</span><span class="n">sitemaps</span><span class="o">.</span><span class="n">Sitemap</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot; 静态视图，例如抓取index和关于我页 &quot;&quot;&quot;</span>
+    <span class="n">priority</span> <span class="o">=</span> <span class="mf">0.5</span>
+    <span class="n">changefreq</span> <span class="o">=</span> <span class="s1">&#39;daily&#39;</span>
+
+    <span class="k">def</span> <span class="nf">items</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="c1"># 在items里显式列出静态视图名称</span>
+        <span class="k">return</span> <span class="p">[</span><span class="s1">&#39;index&#39;</span><span class="p">,</span> <span class="s1">&#39;about&#39;</span><span class="p">]</span>
+
+    <span class="k">def</span> <span class="nf">location</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">item</span><span class="p">):</span>
+        <span class="c1"># 在location里用reverse调用, obj是一个个items返回后的对象</span>
+        <span class="k">return</span> <span class="n">reverse</span><span class="p">(</span><span class="n">item</span><span class="p">)</span>
+
+<span class="c1"># urls.py</span>
+<span class="kn">from</span> <span class="nn">django.contrib.sitemaps.views</span> <span class="kn">import</span> <span class="n">sitemap</span>
+<span class="kn">from</span> <span class="nn">django.urls</span> <span class="kn">import</span> <span class="n">path</span>
+
+<span class="kn">from</span> <span class="nn">.sitemaps</span> <span class="kn">import</span> <span class="n">StaticViewSitemap</span>
+<span class="kn">from</span> <span class="nn">.</span> <span class="kn">import</span> <span class="n">views</span>
+
+<span class="n">sitemaps</span> <span class="o">=</span> <span class="p">{</span>
+    <span class="s1">&#39;static&#39;</span><span class="p">:</span> <span class="n">StaticViewSitemap</span><span class="p">,</span>
+<span class="p">}</span>
+
+<span class="n">urlpatterns</span> <span class="o">=</span> <span class="p">[</span>
+    <span class="n">path</span><span class="p">(</span><span class="s1">&#39;&#39;</span><span class="p">,</span> <span class="n">views</span><span class="o">.</span><span class="n">main</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="s1">&#39;main&#39;</span><span class="p">),</span>
+    <span class="n">path</span><span class="p">(</span><span class="s1">&#39;about/&#39;</span><span class="p">,</span> <span class="n">views</span><span class="o">.</span><span class="n">about</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="s1">&#39;about&#39;</span><span class="p">),</span>
+    <span class="n">path</span><span class="p">(</span><span class="s1">&#39;license/&#39;</span><span class="p">,</span> <span class="n">views</span><span class="o">.</span><span class="n">license</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="s1">&#39;license&#39;</span><span class="p">),</span>
+    <span class="c1"># ...</span>
+    <span class="n">path</span><span class="p">(</span><span class="s1">&#39;sitemap.xml&#39;</span><span class="p">,</span> <span class="n">sitemap</span><span class="p">,</span> <span class="p">{</span><span class="s1">&#39;sitemaps&#39;</span><span class="p">:</span> <span class="n">sitemaps</span><span class="p">},</span>
+         <span class="n">name</span><span class="o">=</span><span class="s1">&#39;django.contrib.sitemaps.views.sitemap&#39;</span><span class="p">)</span>
+<span class="p">]</span>
+</pre></div>
+
+            
+            
+            
+
+        </section>
+
+        <aside id="sidebar">
+            <blockquote class="route">关于我</blockquote>
+            <p>19本科毕业生，代码的搬运工，此界面灵感来自公众号【运维咖啡吧】</p>
+            
+            <blockquote class="route">Github地址</blockquote>
+            <a href="https://github.com/enjoy-binbin">
+                <img border="0" src="https://avatars2.githubusercontent.com/u/22811481" width="100%" height="100%" alt="enjoy-binbin"/>
+            </a>
+            
+            
+        </aside>
+    </div>
+</div>
+</body>
+
+</html>

@@ -1,0 +1,269 @@
+
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta name="theme-color" content="#2879d0"/>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1"/>
+    <meta name="copyright" content="©2020 测试所有"/>
+    <link rel="stylesheet" href="/css/style.min.css" media="screen" type="text/css"/>
+
+    <!-- Begin SEO tag -->
+    <title>html+css+js完成别踩白块</title>
+    <meta property="og:locale" content="zh_CN"/>
+    <meta property="og:type" content="article"/>
+    <meta property="og:title" content="html+css+js完成别踩白块"/>
+    <meta property="og:description" content="html+css+js完成别踩白块"/>
+    <meta property="og:url" content="#"/>
+    <meta property="og:site_name" content="html+css+js完成别踩白块"/>
+    <meta name="description" content="html+css+js完成别踩白块"/>
+    <!-- End SEO tag -->
+</head>
+
+<body>
+<header>
+    <div class="inner">
+        <a href="/">
+            <h1>彬彬同学丶</h1>
+        </a>
+        <h2>Choose what you love,love what you choose.</h2>
+    </div>
+</header>
+
+<div id="content-wrapper">
+    <div class="inner clearfix">
+        <section id="main-content">
+        
+            
+                <h1 id="art-title">html+css+js完成别踩白块</h1>
+            
+            
+            
+                <p><h1 class="ue_t" label="Title center" name="tc" style="border-bottom-color:#cccccc;border-bottom-width:2px;border-bottom-style:solid;padding:0px 4px 0px 0px;text-align:center;margin:0px 0px 20px;"><span style="color:#c0504d;">别踩白块网页版</span></h1><p style="text-align:center;"><strong class="ue_t">html+css+js完成一个别踩白块网页版游戏</strong></p><h3><span class="ue_t" style="font-family:幼圆">思路(from 十八哥):</span></h3><p style="text-indent:2em;">首先有一个main,里面有个container容器,然后container里面有5个row<br/>&nbsp;&nbsp; &nbsp;&nbsp;&nbsp; 实现是: 下面4个row显示,上面1个row溢出隐藏,实现无缝滚动。其实轮播图也是这样做的<br/>&nbsp;&nbsp; &nbsp;&nbsp;&nbsp; 因为con的top为 -100px 所以有一个row超出了main&nbsp; 需要 overfloat:hidden;<br/>&nbsp;&nbsp; &nbsp;&nbsp;&nbsp; 将con的top 逐渐从 -100 增加到 0 完成块的无缝滚动<br/>&nbsp;&nbsp; &nbsp;&nbsp;&nbsp; con的背景颜色为 white <br/>&nbsp;&nbsp; &nbsp;&nbsp;&nbsp; 初始化: 创建 4个row&nbsp; 每一个row 中 规定 一个cell.black 则有一个黑块<br/>&nbsp;&nbsp; &nbsp;&nbsp;&nbsp; 移动: 将con的top 逐渐从 -100 增加到 0 而后又置为 -100<br/>&nbsp;&nbsp; &nbsp; &nbsp; 同时drow 删除最后一行的row<br/>&nbsp;&nbsp; &nbsp;&nbsp;&nbsp; 后续: judge判断胜负 fail输出失败信息 score计算分数 start开始按钮</p><h3><span style="font-family:幼圆">index.html</span></h3><p style="text-indent:2em;"></p><h3><span style="font-family:幼圆">index.css</span></h3><pre class="brush:css;toolbar:false">body{
+&nbsp;&nbsp;&nbsp;&nbsp;background:&nbsp;#333;
+&nbsp;&nbsp;&nbsp;&nbsp;/<em>&nbsp;防止文本被选中插件&nbsp;</em>/
+&nbsp;&nbsp;&nbsp;&nbsp;-moz-user-select:none;/<em>火狐</em>/
+&nbsp;&nbsp;&nbsp;&nbsp;-webkit-user-select:none;/<em>webkit浏览器</em>/
+&nbsp;&nbsp;&nbsp;&nbsp;-ms-user-select:none;/<em>IE10</em>/
+&nbsp;&nbsp;&nbsp;&nbsp;-khtml-user-select:none;/<em>早期浏览器</em>/
+&nbsp;&nbsp;&nbsp;&nbsp;user-select:none;
+}</p>
+<h1>main{</h1>
+<p>&nbsp;&nbsp;&nbsp;&nbsp;width:&nbsp;400px;
+&nbsp;&nbsp;&nbsp;&nbsp;height:&nbsp;400px;
+&nbsp;&nbsp;&nbsp;&nbsp;margin:&nbsp;0&nbsp;auto;
+&nbsp;&nbsp;&nbsp;&nbsp;position:&nbsp;relative;
+&nbsp;&nbsp;&nbsp;&nbsp;overflow:&nbsp;hidden;
+&nbsp;&nbsp;&nbsp;&nbsp;background:&nbsp;white;
+&nbsp;&nbsp;&nbsp;&nbsp;border:&nbsp;2px&nbsp;solid&nbsp;black;
+}</p>
+<h1>container{</h1>
+<p>&nbsp;&nbsp;&nbsp;&nbsp;width:&nbsp;100%;
+&nbsp;&nbsp;&nbsp;&nbsp;height:&nbsp;400px;
+&nbsp;&nbsp;&nbsp;&nbsp;position:&nbsp;relative;
+&nbsp;&nbsp;&nbsp;&nbsp;top:&nbsp;-100px;
+}
+.row{
+&nbsp;&nbsp;&nbsp;&nbsp;width:&nbsp;100%;
+&nbsp;&nbsp;&nbsp;&nbsp;height:&nbsp;100px;
+}
+.cell{
+&nbsp;&nbsp;&nbsp;&nbsp;width:&nbsp;100px;
+&nbsp;&nbsp;&nbsp;&nbsp;height:&nbsp;100px;
+&nbsp;&nbsp;&nbsp;&nbsp;float:&nbsp;left;
+}
+.black{
+&nbsp;&nbsp;&nbsp;&nbsp;background:&nbsp;black;
+}</p>
+<h1>top{</h1>
+<p>&nbsp;&nbsp;&nbsp;&nbsp;text-align:&nbsp;center;
+}
+p{
+&nbsp;&nbsp;&nbsp;&nbsp;margin:&nbsp;10px;
+&nbsp;&nbsp;&nbsp;&nbsp;padding:&nbsp;0;
+}</p>
+<h1>top&nbsp;#score{</h1>
+<p>&nbsp;&nbsp;&nbsp;&nbsp;font-size:&nbsp;30px;
+&nbsp;&nbsp;&nbsp;&nbsp;color:&nbsp;#abcdef;
+}</p>
+<h1>top&nbsp;#hint{</h1>
+<p>&nbsp;&nbsp;&nbsp;&nbsp;font-size:&nbsp;20px;
+&nbsp;&nbsp;&nbsp;&nbsp;color:&nbsp;red;
+}&lt;/pre&gt;<h3><span style="font-family:幼圆">js</span></h3><pre class="brush:js;toolbar:false">&nbsp;&nbsp;&nbsp;&nbsp;/<em>&nbsp;一些全局变量&nbsp;</em>/
+&nbsp;&nbsp;&nbsp;&nbsp;var&nbsp;speed&nbsp;=&nbsp;3;&nbsp;//速度默认为3
+&nbsp;&nbsp;&nbsp;&nbsp;var&nbsp;clock&nbsp;=&nbsp;null;&nbsp;//&nbsp;定时器
+&nbsp;&nbsp;&nbsp;&nbsp;var&nbsp;state&nbsp;=&nbsp;0;&nbsp;//&nbsp;0初始化&nbsp;1进行中&nbsp;2暂停&nbsp;3失败
+&nbsp;&nbsp;&nbsp;&nbsp;var&nbsp;con&nbsp;=&nbsp;document.getElementById(&#39;container&#39;);&nbsp;//&nbsp;获得con对象
+&nbsp;&nbsp;&nbsp;&nbsp;var&nbsp;hint&nbsp;=&nbsp;document.getElementById(&#39;hint&#39;);&nbsp;//&nbsp;获得hint对象</p>
+<p>&nbsp;&nbsp;&nbsp;&nbsp;/<em>
+&nbsp;&nbsp;&nbsp;&nbsp;**游戏初始化
+&nbsp;&nbsp;&nbsp;&nbsp;</em>/
+&nbsp;&nbsp;&nbsp;&nbsp;function&nbsp;init(){
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;for(var&nbsp;a=0;&nbsp;a&lt;4;a++)
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;crow();
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;document.getElementById(&#39;start&#39;).onclick&nbsp;=&nbsp;function(ev){
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;start();
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;}
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;document.getElementById(&#39;restart&#39;).onclick&nbsp;=&nbsp;function(ev){
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;restart();
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;}
+&nbsp;&nbsp;&nbsp;&nbsp;}
+&nbsp;&nbsp;&nbsp;&nbsp;/<em>
+&nbsp;&nbsp;&nbsp;&nbsp;<strong>创建div
+&nbsp;&nbsp;&nbsp;&nbsp;</strong>param&nbsp;div的类名
+&nbsp;&nbsp;&nbsp;&nbsp;</em>/
+&nbsp;&nbsp;&nbsp;&nbsp;function&nbsp;cdiv(className){
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;var&nbsp;div&nbsp;=&nbsp;document.createElement(&#39;div&#39;);
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;div.className&nbsp;=&nbsp;className;
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;return&nbsp;div;
+&nbsp;&nbsp;&nbsp;&nbsp;}</p>
+<p>&nbsp;&nbsp;&nbsp;&nbsp;/<em>
+&nbsp;&nbsp;&nbsp;&nbsp;**创建div.row&nbsp;一行包着4个div.cell
+&nbsp;&nbsp;&nbsp;&nbsp;</em>/
+&nbsp;&nbsp;&nbsp;&nbsp;function&nbsp;crow(){
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;var&nbsp;row&nbsp;=&nbsp;cdiv(&#39;row&#39;);
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;var&nbsp;classes&nbsp;=&nbsp;createSn();//&nbsp;获取cell类名
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;for(var&nbsp;i&nbsp;=&nbsp;0&nbsp;;&nbsp;i&nbsp;&lt;&nbsp;4&nbsp;;&nbsp;i++){&nbsp;//&nbsp;创建4个cell
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;var&nbsp;cell&nbsp;=&nbsp;cdiv(classes[i]);
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;row.appendChild(cell);
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;}
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;//&nbsp;创建row
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;if(con.firstChild&nbsp;==&nbsp;null)
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;//&nbsp;如果con的第一个child为空
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;//&nbsp;追加一个新的row
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;con.appendChild(row);
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;else
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;//&nbsp;否则将创建的新的row
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;//&nbsp;追加到第一个row的上面
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;con.insertBefore(row,con.firstChild);
+&nbsp;&nbsp;&nbsp;&nbsp;}</p>
+<p>&nbsp;&nbsp;&nbsp;&nbsp;/<em>
+&nbsp;&nbsp;&nbsp;&nbsp;<strong>&nbsp;删除最后一行row
+&nbsp;&nbsp;&nbsp;&nbsp;</strong>&nbsp;前四行显示在屏幕上&nbsp;,&nbsp;第五行在最上面
+&nbsp;&nbsp;&nbsp;&nbsp;**&nbsp;当第六行出现,删除屏幕上的最后一行&nbsp;
+&nbsp;&nbsp;&nbsp;&nbsp;</em>/
+&nbsp;&nbsp;&nbsp;&nbsp;function&nbsp;drow(){
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;if(con.childNodes.length&nbsp;==&nbsp;6)
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;con.removeChild(con.lastChild);
+&nbsp;&nbsp;&nbsp;&nbsp;}</p>
+<p>&nbsp;&nbsp;&nbsp;&nbsp;/<em>
+&nbsp;&nbsp;&nbsp;&nbsp;<strong>创建cell的类&nbsp;并随机一个black
+&nbsp;&nbsp;&nbsp;&nbsp;</strong>return&nbsp;array&nbsp;&nbsp;里面是类的名字
+&nbsp;&nbsp;&nbsp;&nbsp;</em>/
+&nbsp;&nbsp;&nbsp;&nbsp;function&nbsp;createSn(){
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;var&nbsp;arr&nbsp;=&nbsp;[&#39;cell&#39;,&#39;cell&#39;,&#39;cell&#39;,&#39;cell&#39;];
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;var&nbsp;i&nbsp;=&nbsp;Math.floor(Math.random()*4);
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;arr[i]&nbsp;=&nbsp;&#39;cell&nbsp;black&#39;;//&nbsp;随机一个黑块
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;return&nbsp;arr;
+&nbsp;&nbsp;&nbsp;&nbsp;}</p>
+<p>&nbsp;&nbsp;&nbsp;&nbsp;/<em>
+&nbsp;&nbsp;&nbsp;&nbsp;**控制木块移动
+&nbsp;&nbsp;&nbsp;&nbsp;</em>/
+&nbsp;&nbsp;&nbsp;&nbsp;function&nbsp;move(){
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;//getComputedStyle是一个可以获取当前元素所有最终使用的CSS属性值。
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;//返回的是一个CSS样式声明对象([object&nbsp;CSSStyleDeclaration])，只读
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;//console.log(window.getComputedStyle(con,null))
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;var&nbsp;top&nbsp;=&nbsp;parseInt(window.getComputedStyle(con,null)[&#39;top&#39;]);
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;//console.log(top);
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;if(speed&nbsp;+&nbsp;top&nbsp;&gt;&nbsp;0)
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;top&nbsp;=&nbsp;0;&nbsp;//&nbsp;一步都过头的情况
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;else&nbsp;
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;top&nbsp;+=&nbsp;speed;
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;con.style.top&nbsp;=&nbsp;top&nbsp;+&nbsp;&#39;px&#39;;
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;if(top&nbsp;==&nbsp;0){
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;crow();&nbsp;//&nbsp;创建一个row
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;con.style.top&nbsp;=&nbsp;&#39;-100px&#39;;&nbsp;//&nbsp;top为0时,再将top往上提100px
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;drow();&nbsp;//&nbsp;删除最后一个row
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;}else&nbsp;if(top&nbsp;==&nbsp;(-100&nbsp;+&nbsp;speed)&nbsp;){
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;var&nbsp;rows&nbsp;=&nbsp;con.childNodes;
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;//&nbsp;如果有五行row&nbsp;且最后一行的pass&nbsp;!=1&nbsp;判断为输
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;if(&nbsp;(rows.length==5)&nbsp;&amp;&amp;&nbsp;(rows[rows.length-1].pass&nbsp;!=1)&nbsp;){
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;//console.log(rows);&nbsp;这边要小心rows中有文字节点删除空格
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;fail();
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;}
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;}
+&nbsp;&nbsp;&nbsp;&nbsp;}</p>
+<p>&nbsp;&nbsp;&nbsp;&nbsp;/<em>
+&nbsp;&nbsp;&nbsp;&nbsp;**&nbsp;判断黑白
+&nbsp;&nbsp;&nbsp;&nbsp;</em>/
+&nbsp;&nbsp;&nbsp;&nbsp;function&nbsp;judge(ev){
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;if(state&nbsp;==&nbsp;3){
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;hint.innerHTML&nbsp;=&nbsp;&#39;失败了&#39;;
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;return;
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;}
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;//console.log(ev);
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;//&nbsp;indexOf&nbsp;返回某个指定的字符串值在字符串中首次出现的位置。
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;if(ev.target.className.indexOf(&#39;black&#39;)&nbsp;==&nbsp;-1)
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;fail();&nbsp;//&nbsp;要是没找到则点击的为白块,so失败
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;else{
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;ev.target.className&nbsp;=&nbsp;&#39;cell&#39;;&nbsp;//&nbsp;将黑块变为白块
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;ev.target.parentNode.pass&nbsp;=&nbsp;1;&nbsp;//&nbsp;parent为&nbsp;div.row
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;score();
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;}&nbsp;&nbsp;&nbsp;&nbsp;
+&nbsp;&nbsp;&nbsp;&nbsp;}</p>
+<p>&nbsp;&nbsp;&nbsp;&nbsp;/<em>
+&nbsp;&nbsp;&nbsp;&nbsp;**&nbsp;失败
+&nbsp;&nbsp;&nbsp;&nbsp;</em>/
+&nbsp;&nbsp;&nbsp;&nbsp;function&nbsp;fail(){
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;clearInterval(clock);&nbsp;//&nbsp;清楚定时器
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;state&nbsp;=&nbsp;3;&nbsp;//&nbsp;设置状态
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;//alert(&#39;游戏结束了&#39;);
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;hint.innerHTML&nbsp;=&nbsp;&#39;失败了&#39;;
+&nbsp;&nbsp;&nbsp;&nbsp;}</p>
+<p>&nbsp;&nbsp;&nbsp;&nbsp;/<em>
+&nbsp;&nbsp;&nbsp;&nbsp;**&nbsp;计分
+&nbsp;&nbsp;&nbsp;&nbsp;</em>/
+&nbsp;&nbsp;&nbsp;&nbsp;function&nbsp;score(){
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;var&nbsp;score&nbsp;=&nbsp;parseInt(document.getElementById(&#39;score&#39;).innerHTML);
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;var&nbsp;newscore&nbsp;=&nbsp;score&nbsp;+&nbsp;1;
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;document.getElementById(&#39;score&#39;).innerHTML&nbsp;=&nbsp;newscore;
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;if(&nbsp;newscore&nbsp;%&nbsp;10&nbsp;==&nbsp;0&nbsp;)&nbsp;//&nbsp;每10分加一次速度
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;speedUp();
+&nbsp;&nbsp;&nbsp;&nbsp;}</p>
+<p>&nbsp;&nbsp;&nbsp;&nbsp;/<em>
+&nbsp;&nbsp;&nbsp;&nbsp;**&nbsp;加速
+&nbsp;&nbsp;&nbsp;&nbsp;</em>/
+&nbsp;&nbsp;&nbsp;&nbsp;function&nbsp;speedUp(){
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;speed&nbsp;+=&nbsp;2;
+&nbsp;&nbsp;&nbsp;&nbsp;}</p>
+<p>&nbsp;&nbsp;&nbsp;&nbsp;/<em>&nbsp;开始游戏&nbsp;</em>/
+&nbsp;&nbsp;&nbsp;&nbsp;function&nbsp;start(){
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;if(state&nbsp;==&nbsp;3){
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;hint.innerHTML&nbsp;=&nbsp;&#39;请重新开始下一局..&#39;;
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;return;
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;}
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;//&nbsp;定时器&nbsp;30ms运行一次move()
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;clock&nbsp;=&nbsp;window.setInterval(&#39;move()&#39;,30);
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;//&nbsp;给main增加一个click事件,并且将event传入judge
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;document.getElementById(&#39;main&#39;).onclick&nbsp;=&nbsp;function(ev){
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;judge(ev);
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;}
+&nbsp;&nbsp;&nbsp;&nbsp;}</p>
+<p>&nbsp;&nbsp;&nbsp;&nbsp;function&nbsp;restart(){
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;location.reload(true);
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;//start();
+&nbsp;&nbsp;&nbsp;&nbsp;}</p>
+<p>&nbsp;&nbsp;&nbsp;&nbsp;init();&lt;/pre&gt;<p><br/></p><p><a name="Top"></a><br/></p></p>
+
+            
+            
+            
+
+        </section>
+
+        <aside id="sidebar">
+            <blockquote class="route">关于我</blockquote>
+            <p>19本科毕业生，代码的搬运工，此界面灵感来自公众号【运维咖啡吧】</p>
+            
+            <blockquote class="route">Github地址</blockquote>
+            <a href="https://github.com/enjoy-binbin">
+                <img border="0" src="https://avatars2.githubusercontent.com/u/22811481" width="100%" height="100%" alt="enjoy-binbin"/>
+            </a>
+            
+            
+        </aside>
+    </div>
+</div>
+</body>
+
+</html>

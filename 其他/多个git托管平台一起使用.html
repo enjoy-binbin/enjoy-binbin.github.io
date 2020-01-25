@@ -1,0 +1,148 @@
+
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta name="theme-color" content="#2879d0"/>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1"/>
+    <meta name="copyright" content="©2020 测试所有"/>
+    <link rel="stylesheet" href="/css/style.min.css" media="screen" type="text/css"/>
+
+    <!-- Begin SEO tag -->
+    <title>多个git托管平台一起使用</title>
+    <meta property="og:locale" content="zh_CN"/>
+    <meta property="og:type" content="article"/>
+    <meta property="og:title" content="多个git托管平台一起使用"/>
+    <meta property="og:description" content="多个git托管平台一起使用"/>
+    <meta property="og:url" content="#"/>
+    <meta property="og:site_name" content="多个git托管平台一起使用"/>
+    <meta name="description" content="多个git托管平台一起使用"/>
+    <!-- End SEO tag -->
+</head>
+
+<body>
+<header>
+    <div class="inner">
+        <a href="/">
+            <h1>彬彬同学丶</h1>
+        </a>
+        <h2>Choose what you love,love what you choose.</h2>
+    </div>
+</header>
+
+<div id="content-wrapper">
+    <div class="inner clearfix">
+        <section id="main-content">
+        
+            
+                <h1 id="art-title">多个git托管平台一起使用</h1>
+            
+            
+            
+                <p>github是网络公有代码仓库，一般用于私人代码托管，而gitlab一般是企业搭建的内部代码仓库。由于两者的邮箱不同，由此产生的 SSH key 也是不同的，这就造成了冲突 。</p>
+<h5>背景：</h5>
+<p>目前公司用的是自建的gitlab来做代码的版本管理和协同开发，而我自己有个私人的github账号，和一个gitee账号，github当然是用来交友的啦，而gitee自己更多的则是用来当中间站，毕竟github在国内的速度有时抽筋不太理想。而在这样的前提下，默认使用到的id_rsa秘钥key就不适用多账号多平台了。</p>
+<p>或者说咋样才能在一台电脑上同时使用这几个代码托管平台呢，或者多账号的git要怎么配置ssh-key和config。</p>
+<p>对于同样邮箱的，可以共用一个key</p>
+<p><em>码云上的介绍: <a href="https://gitee.com/help/articles/4229#article-header0">https://gitee.com/help/articles/4229#article-header0</a></em></p>
+<p><em>下面Base on Win10，其他linux下也一样，默认存储路径不一样 ~/.ssh</em></p>
+<p><strong>首先</strong>，使用<code>ssh-keygen</code>生成公钥和私钥，其中秘钥名称不一样（自己指定的），其中公钥是放在平台上的</p>
+<pre><code>ssh-keygen -t rsa -C "binbin.zhu@lizhiweike.com"
+/c/Users/admin/.ssh/weike_id_rsa
+...
+ssh-keygen -t rsa -C "binloveplay1314@qq.com"
+/c/Users/admin/.ssh/github_id_rsa
+</code></pre>
+<p><strong>之后</strong>，在<code>/c/Users/admin/.ssh</code> 目录下创建ssh的配置文件命名为config，下面会有配置项的相关说明</p>
+<pre><code># vim config  # 或者window直接新建, 然后将下面的内容根据需要修改过去
+
+# weike gitlab eg. `git clone ssh://git@gitlab.weike.fm/xxx.git`
+# Host类似别名, 用于命令行克隆@后的一串, 进来会根据规则指定到HostName
+# 可以使用通配符，当server匹配到了，HostName会作为最终的url，而下面相关的配置信息都会被使用
+Host gitlab.*.fm
+    HostName gitlab.weike.fm
+    port 9522
+    User git
+    IdentityFile C:/Users/admin/.ssh/weike_id_rsa
+
+# eg. `git clone ssh://git@github.com:22/xxx.git`
+Host github.com
+    HostName github.com
+    port 22
+    User git
+    IdentityFile C:/Users/admin/.ssh/github_id_rsa
+    PreferredAuthentications publickey
+
+# 这里如果有多个相同域名的, 就把Host给修改了, 区别于上面
+# 同样User zbb，区别于上面，看下面使用ssh -T 的输出
+# eg. `git clone git clone ssh://git@github-binbin:22`
+Host github-binbin
+    HostName github.com
+    port 22
+    User zbb
+    IdentityFile C:/Users/admin/.ssh/github_id_rsa
+</code></pre>
+<p>ssh配置字段信息简单解释</p>
+<pre><code>Host
+    它涵盖了下面一个段的配置，我们可以用它来替代将要连接的服务器地址，也就是起了个别名
+    这里的Host可以使用任意字段或者通配符，来进行匹配，当匹配上的时候（见上面的示例eg）
+    则Host下面指定的HostName将被作为最终的服务器地址使用，并且将使用该段后面定义的配置，例如更改了默认22的端口，指定使用的公钥路径
+    如果自定义名称，clone项目是git@[Host]:仓库
+Port
+    端口，自定义，默认是22，可不配置
+HostName
+    真正连接的服务器地址，区别于别名
+User
+    系统用户名，最好不配置，设置为git，git@[Host]:仓库前面的git
+    Window用户下，客户端默认好像是admin
+    远程git机器，一般都是设置为git
+PreferredAuthentications
+    指定优先使用哪种方式验证，支持密码和秘钥验证方式
+    取值： publickey   公钥验证
+    取值： password    密码验证
+IdentityFile
+    指定本次连接使用的公钥文件路径
+</code></pre>
+<p>测试ssh的连接</p>
+<div class="highlight"><pre><span></span><span class="c1"># 例如如果配置了User, 值为zbb，则使用 ssh -T 会得到下面的提示</span>
+λ ssh -T github-binbin
+zbb@github.com: Permission denied <span class="o">(</span>publickey<span class="o">)</span>.
+
+<span class="c1"># 正常情况下，User配置为git</span>
+λ ssh -T github.com
+Hi enjoy-binbin! You<span class="err">&#39;</span>ve successfully authenticated, but GitHub does not provide shell access.
+
+<span class="c1"># 因为使用了通配符，所以xx也能匹配到实际的地址</span>
+λ ssh -T gitlab.xx.fm
+Welcome to GitLab, @zbb!
+</pre></div>
+<p><strong>最后</strong>，对于不同的项目，不同的提交信息，我们需要使用不同的user.name和user.email</p>
+<pre><code># --global 可以用于最常用的全局的
+
+# --local 可以对某个仓库设置为本地配置项
+git config --local user.name 'enjoy-binbin'
+git config --local user.email 'binloveplay1314@qq.com'
+</code></pre>
+
+            
+            
+            
+
+        </section>
+
+        <aside id="sidebar">
+            <blockquote class="route">关于我</blockquote>
+            <p>19本科毕业生，代码的搬运工，此界面灵感来自公众号【运维咖啡吧】</p>
+            
+            <blockquote class="route">Github地址</blockquote>
+            <a href="https://github.com/enjoy-binbin">
+                <img border="0" src="https://avatars2.githubusercontent.com/u/22811481" width="100%" height="100%" alt="enjoy-binbin"/>
+            </a>
+            
+            
+        </aside>
+    </div>
+</div>
+</body>
+
+</html>

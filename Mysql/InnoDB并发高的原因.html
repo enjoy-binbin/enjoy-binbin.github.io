@@ -1,0 +1,189 @@
+
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta name="theme-color" content="#2879d0"/>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1"/>
+    <meta name="copyright" content="©2020 测试所有"/>
+    <link rel="stylesheet" href="/css/style.min.css" media="screen" type="text/css"/>
+
+    <!-- Begin SEO tag -->
+    <title>InnoDB并发高的原因</title>
+    <meta property="og:locale" content="zh_CN"/>
+    <meta property="og:type" content="article"/>
+    <meta property="og:title" content="InnoDB并发高的原因"/>
+    <meta property="og:description" content="InnoDB并发高的原因"/>
+    <meta property="og:url" content="#"/>
+    <meta property="og:site_name" content="InnoDB并发高的原因"/>
+    <meta name="description" content="InnoDB并发高的原因"/>
+    <!-- End SEO tag -->
+</head>
+
+<body>
+<header>
+    <div class="inner">
+        <a href="/">
+            <h1>彬彬同学丶</h1>
+        </a>
+        <h2>Choose what you love,love what you choose.</h2>
+    </div>
+</header>
+
+<div id="content-wrapper">
+    <div class="inner clearfix">
+        <section id="main-content">
+        
+            
+                <h1 id="art-title">InnoDB并发高的原因</h1>
+            
+            
+            
+                <p><strong>一、并发控制</strong></p>
+<p><strong>为啥要进行并发控制？</strong></p>
+<p>并发的任务对同一个临界资源进行操作，如果不采取措施，可能导致不一致，故必须进行<strong>并发控制</strong>（Concurrency Control）。</p>
+<p><strong>技术上，通常如何进行并发控制？</strong></p>
+<p>通过并发控制保证数据一致性的常见手段有：</p>
+<ul>
+<li><p>锁（Locking）</p>
+</li>
+<li><p>数据多版本（Multi Versioning）</p>
+</li>
+</ul>
+<p><strong>二、锁</strong></p>
+<p><strong>如何使用普通锁保证一致性？</strong></p>
+<p>普通锁，被使用最多：</p>
+<p>(1)操作数据前，锁住，实施互斥，不允许其他的并发任务操作；</p>
+<p>(2)操作完成后，释放锁，让其他任务执行；</p>
+<p>如此这般，来保证一致性。</p>
+<p><strong>普通锁存在什么问题？</strong></p>
+<p>简单的锁住太过粗暴，连“读任务”也无法并行，任务执行过程本质上是串行的。</p>
+<p>于是出现了<strong>共享锁</strong>与<strong>排他锁</strong>：</p>
+<ul>
+<li>共享锁（share Locks，也叫读锁），读取数据时加读锁</li>
+<li>排他锁（exclusive Locks，也叫写锁），修改数据时加写锁</li>
+</ul>
+<p>共享锁与排他锁的玩法是：</p>
+<ul>
+<li>共享锁之间不互斥，简记为：读读可以并行</li>
+<li>排他锁与任何锁互斥，简记为：写读，写写不可以并行</li>
+</ul>
+<p>可以看到，一旦写数据的任务没有完成，数据是不能被其他任务读取的，这对并发度有很大的影响。</p>
+<p><em>画外音：对应到数据库，可以理解为，写事务没有提交，读相关数据的select也会被阻塞。</em></p>
+<p><strong>有没有可能，进一步提高并发呢？</strong></p>
+<p>即使写任务没有完成，其他读任务也可能并发，这就引出了数据多版本。</p>
+<p><strong>三、数据多版本</strong></p>
+<p>用在InnoDB之中著名的 MVCC(Mutil-Version Concurrency Control)，就是多版本并发控制。</p>
+<p>数据多版本是一种能够进一步提高并发的方法，它的<strong>核心原理</strong>是：</p>
+<p>（1）写任务发生时，将数据克隆一份，用版本号做区分；</p>
+<p>（2）写任务操作新克隆的数据，直至提交；</p>
+<p>（3）并发读任务可以继续读取旧版本的数据，不至于阻塞；</p>
+<p>如上图：</p>
+<ol>
+<li>最开始数据的版本是V0；</li>
+<li>T1时刻发起了一个写任务，这时把数据clone了一份，进行修改，版本变为V1，但任务还未完成；</li>
+<li>T2时刻并发了一个读任务，依然可以读V0版本的数据；</li>
+<li>T3时刻又并发了一个读任务，依然可以读V0不会阻塞；</li>
+</ol>
+<p>可以看到，数据多版本，通过“读取旧版本数据”（快照读）能够极大提高任务的并发度。</p>
+<p>提高并发的演进思路，就在如此：</p>
+<ul>
+<li><strong>普通锁</strong>，本质是串行执行</li>
+<li><strong>读写锁</strong>，可以实现读读并发</li>
+<li><strong>数据多版本</strong>，可以实现读写并发</li>
+</ul>
+<p><em>画外音：这个思路，比整篇文章的其他技术细节更重要，希望大家牢记。</em></p>
+<p>在MySQL里，有两个“视图”的概念：</p>
+<ul>
+<li>一个是view。它是一个用查询语句定义的虚拟表，在调用的时候执行查询语句并生成结果。创建视图的语法是create view ... ，而它的查询方法与表一样。</li>
+<li>另一个是InnoDB在实现MVCC时用到的一致性读视图，即consistent read view，用于支持RC（Read Committed，读提交）和RR（Repeatable Read，可重复读）隔离级别的实现。</li>
+</ul>
+<p>InnoDB里面每个事务有一个唯一的事务ID，叫作transaction id。它是在事务开始的时候向InnoDB的事务系统申请的，是按申请顺序严格递增的。</p>
+<p>而每行数据也都是有多个版本的。每次事务更新数据的时候，都会生成一个新的数据版本，并且把transaction id赋值给这个数据版本的事务ID，记为row trx_id。同时，旧的数据版本要保留，并且在新的数据版本中，能够有信息可以直接拿到它。</p>
+<p>也就是说，数据表中的一行记录，其实可能有多个版本(row)，每个版本有自己的row trx_id。</p>
+<p><strong>四、redo, undo, 回滚段</strong></p>
+<p>在进一步介绍InnoDB如何使用“读取旧版本数据”极大提高任务的并发度之前，有必要先介绍下redo日志，undo日志，回滚段（rollback segment）。</p>
+<p><strong>为什么要有redo日志（重做日志，物理日志，InnoDB特有）？</strong></p>
+<p>数据库事务提交后，必须将更新后的数据刷到磁盘上，以保证ACID特性。磁盘<strong>随机写</strong>性能很低，如果每一次的更新操作都需要写进磁盘，然后磁盘也要找到对应的那条记录，然后再更新，整个过程IO成本、查找成本都很高。</p>
+<p>如果每次有更新都刷一次盘，会极大影响数据库的吞吐量。日志和磁盘配合的整个过程，其实就是MySQL里经常说到的WAL技术，WAL的全称是Write-Ahead Logging，它的关键点就是先写日志，再写磁盘</p>
+<p>具体对应到InnoDB中，会将修改行为先写到redo日志里（此时变成了<strong>顺序写</strong>），并更新内存（这时修改就算更新完成了），然后再定期（空闲时刻）将数据刷到磁盘上，这样能极大提高性能。</p>
+<p><em>画外音：这里的架构设计方法是，<strong>随机写优化为顺序写</strong>，思路更重要。</em></p>
+<p>磁盘写操作需要先寻道，在旋转到数据所在扇区，再进行数据操作，与内存操作和cpu操作寄存器相比，这个速度极其的慢。所以MySQL使用了内存来缓存数据页和索引页等，还有重做日志缓冲，事务提交后后，不直接写磁盘，而是把redo日志刷新到磁盘，这样就可以把随机io转换成顺序io，节约io时间，提高数据库性能</p>
+<p>同时，InnoDB中的redo log是固定大小的，比如说可以配置为一组4个文件，每个文件大小1GB，那么整个redo日志就可以记录4GB的操作，根据checkpoint写满后会进行刷盘，循环写redo log。</p>
+<p>有了redo log，InnoDB就可以保证即使数据库发生异常重启，之前提交的记录都不会丢失，这个能力称为<strong>crash-safe</strong>，同时更新流程还涉及到一个重要的日志模块binlog（归档日志），日后再讲。</p>
+<p>假如某一时刻，数据库崩溃，还没来得及刷盘的数据，在数据库重启后，会重做redo日志里的内容，以保证已提交事务对数据产生的影响都刷到磁盘上。</p>
+<p>一句话，redo日志用于保障，已提交事务的ACID特性。</p>
+<hr>
+<p><strong>为什么要有undo日志（回滚日志，逻辑日志）？</strong></p>
+<p>数据库事务未提交时，会将事务修改数据的镜像（即修改前的旧版本）存放到undo日志里，当事务回滚时，或者数据库奔溃时，可以利用undo日志，即旧版本数据，撤销未提交事务对数据库产生的影响。</p>
+<p>记录一些sql的逆操作，提供了回滚功能和MVCC（Mutil-Version Concurrency Control，多版本并发控制）</p>
+<p><em>画外音：更细节的，</em></p>
+<p><em>对于<strong>insert操作</strong>，undo日志记录新数据的PK(ROW_ID)，回滚时直接删除；</em></p>
+<p><em>对于<strong>delete/update操作</strong>，undo日志记录旧数据row，回滚时直接恢复；</em></p>
+<p><em>他们分别存放在不同的buffer里。</em></p>
+<p>一句话，undo日志用于保障，未提交事务不会对数据库的ACID特性产生影响。</p>
+<hr>
+<p><strong>什么是回滚段？</strong></p>
+<p>存储undo日志的地方，是回滚段。undo日志和回滚段和InnoDB的MVCC密切相关。举个例子，假如有个栗子</p>
+<p>start trx;</p>
+<p>delete (1, 张三);                                     (1)被删除前的(1, 张三)作为旧版本数据，进入了回滚段；</p>
+<p>update set(2, 李四) to (2, 李四四);          (2)被修改前的(2, 李四)作为旧版本数据，进入了回滚段；</p>
+<p>insert (3, 王五);                                         (3)被插入的数据，主键PK(3)进入了回滚段；</p>
+<p>并且事务处于未提交的状态。</p>
+<p>假如这时候事务回滚rollback了，便可以通过回滚段里的undo log进行回滚。事务提交后，undo log可以删除</p>
+<p><strong>四、InnoDB是基于多版本并发控制的存储引擎</strong></p>
+<p>以前提到，InnoDB是高并发互联网场景最为推荐的存储引擎，根本原因，就是其<strong>多版本并发控制</strong>（Multi Version Concurrency Control, MVCC）。行锁，并发，事务回滚等多种特性都和MVCC相关。</p>
+<p>MVCC就是通过“读取旧版本数据”来降低并发事务的锁冲突，提高任务的并发度。</p>
+<p><strong>核心问题：</strong></p>
+<p><strong>旧版本数据存储在哪里？</strong></p>
+<p>存储旧版本数据，对MySQL和InnoDB原有架构是否有巨大冲击？</p>
+<p>通过上文undo日志和回滚段的铺垫，这两个问题就非常好回答了：</p>
+<p>(1)旧版本数据存储在回滚段里；</p>
+<p>(2)对MySQL和InnoDB原有架构体系冲击不大；</p>
+<p>InnoDB的内核，会对所有row数据增加三个内部属性：</p>
+<p>(1)<strong>DB_TRX_ID</strong>，6字节，记录每一行最近一次修改它的事务ID；</p>
+<p>(2)<strong>DB_ROLL_PTR</strong>，7字节，记录指向回滚段undo日志的指针；</p>
+<p>(3)<strong>DB_ROW_ID</strong>，6字节，单调递增的行ID；</p>
+<p><strong>InnoDB为何能够做到这么高的并发？</strong></p>
+<p>回滚段里的数据，其实是历史数据的快照（snapshot），这些数据是不会被修改，select可以肆无忌惮的并发读取他们。</p>
+<p><strong>快照读</strong>（Snapshot Read），这种<strong>一致性不加锁的读</strong>（Consistent Nonlocking Read），就是InnoDB并发如此之高的核心原因之一。</p>
+<p>这里的<strong>一致性</strong>是指，事务读取到的数据，要么是事务开始前就已经存在的数据（当然，是其他已提交事务产生的），要么是事务自身插入或者修改的数据。</p>
+<p><strong>什么样的select是快照读？</strong></p>
+<p>除非显示加锁，普通的select语句都是快照读，例如：</p>
+<p>select * from t where id&gt;2;</p>
+<p>这里的显示加锁，非快照读是指：</p>
+<p>select * from t where id&gt;2 <strong>lock in share mode</strong>;      加读锁</p>
+<p>select * from t where id&gt;2 <strong>for update</strong>;                      加写锁</p>
+<p>问题来了，这些显示加锁的读，是什么读？会加什么锁？和事务的隔离级别又有什么关系？</p>
+<p><strong>总结</strong></p>
+<p>(1)常见并发控制保证数据一致性的方法有<strong>锁</strong>，<strong>数据多版本</strong>；</p>
+<p>(2)<strong>普通锁</strong>串行，<strong>读写锁</strong>读读并行，<strong>数据多版本</strong>读写并行；</p>
+<p>(3)<strong>redo日志</strong>保证已提交事务的ACID特性，设计思路是，通过顺序写替代随机写，提高并发，先日志后磁盘；</p>
+<p>(4)<strong>undo日志</strong>用来回滚未提交的事务，它存储在回滚段里；</p>
+<p>(5)InnoDB是基于<strong>MVCC</strong>的存储引擎，它利用了存储在回滚段里的undo日志，即数据的旧版本，提高并发；</p>
+<p>(6)InnoDB之所以并发高，快照读不加锁；</p>
+<p>(7)InnoDB所有普通select都是快照读；</p>
+<p><em>画外音：本文的知识点均基于MySQL5.6。</em></p>
+
+            
+            
+            
+
+        </section>
+
+        <aside id="sidebar">
+            <blockquote class="route">关于我</blockquote>
+            <p>19本科毕业生，代码的搬运工，此界面灵感来自公众号【运维咖啡吧】</p>
+            
+            <blockquote class="route">Github地址</blockquote>
+            <a href="https://github.com/enjoy-binbin">
+                <img border="0" src="https://avatars2.githubusercontent.com/u/22811481" width="100%" height="100%" alt="enjoy-binbin"/>
+            </a>
+            
+            
+        </aside>
+    </div>
+</div>
+</body>
+
+</html>

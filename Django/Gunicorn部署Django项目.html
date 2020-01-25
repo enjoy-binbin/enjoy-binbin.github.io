@@ -1,0 +1,114 @@
+
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta name="theme-color" content="#2879d0"/>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1"/>
+    <meta name="copyright" content="©2020 测试所有"/>
+    <link rel="stylesheet" href="/css/style.min.css" media="screen" type="text/css"/>
+
+    <!-- Begin SEO tag -->
+    <title>Gunicorn部署Django项目</title>
+    <meta property="og:locale" content="zh_CN"/>
+    <meta property="og:type" content="article"/>
+    <meta property="og:title" content="Gunicorn部署Django项目"/>
+    <meta property="og:description" content="Gunicorn部署Django项目"/>
+    <meta property="og:url" content="#"/>
+    <meta property="og:site_name" content="Gunicorn部署Django项目"/>
+    <meta name="description" content="Gunicorn部署Django项目"/>
+    <!-- End SEO tag -->
+</head>
+
+<body>
+<header>
+    <div class="inner">
+        <a href="/">
+            <h1>彬彬同学丶</h1>
+        </a>
+        <h2>Choose what you love,love what you choose.</h2>
+    </div>
+</header>
+
+<div id="content-wrapper">
+    <div class="inner clearfix">
+        <section id="main-content">
+        
+            
+                <h1 id="art-title">Gunicorn部署Django项目</h1>
+            
+            
+            
+                <hr>
+<p>title: Gunicorn部署Django项目
+date: 2019-05-16
+categories:</p>
+<ul>
+<li>django
+tags:</li>
+<li>gunicorn</li>
+<li>nginx</li>
+</ul>
+<hr>
+<p>之前用uswgi+nginx部署自己的Django博客，发现，好像不太方便，而且时常挂，还没Django自己的runserver服务器稳定，可能是自己配置不当，后来使用了Gunicorn，这里记录一下下配置文件</p>
+<h4>配置Nginx站点配置信息(环境是Ubuntu)</h4>
+<div class="highlight"><pre><span></span><span class="c1"># shell下执行，添加自己站点的server块配置信息</span>
+<span class="c1"># vim /etc/nginx/sites-available/binblog</span>
+<span class="c1"># 添加软连接到enabled启动当前配置项</span>
+<span class="c1"># ln -s /etc/nginx/sites-available/binblog /etc/nginx/sites-enabled/binblog</span>
+<span class="c1"># 修改/etc/nginx/sites-available/default默认监听的80</span>
+<span class="c1"># systemctl restart nginx</span>
+
+<span class="k">server</span> <span class="p">{</span>
+    <span class="kn">listen</span>         <span class="mi">80</span><span class="p">;</span>  <span class="c1"># 监听的端口，80端口，同时需要修改nginx默认的80页面</span>
+    <span class="kn">server_name</span>    <span class="s">bin.lotiger.cn</span><span class="p">;</span>  <span class="c1"># 名称</span>
+    <span class="kn">charset</span> <span class="s">UTF-8</span><span class="p">;</span>
+
+    <span class="kn">location</span> <span class="s">/static</span><span class="p">{</span>
+        <span class="c1"># django静态文件路径 url里 /static 都指向文件路径.../collectedstatic目录</span>
+        <span class="kn">alias</span> <span class="s">/var/www/html/binblog-Django/collectedstatic</span><span class="p">;</span>
+    <span class="p">}</span>
+
+    <span class="kn">location</span> <span class="s">/media</span><span class="p">{</span>
+        <span class="c1"># django媒体文件路径 url里 /media 都指向文件路径.../media目录</span>
+        <span class="kn">alias</span> <span class="s">/var/www/html/binblog-Django/media</span><span class="p">;</span>
+    <span class="p">}</span>
+
+    <span class="kn">location</span> <span class="s">/</span> <span class="p">{</span>
+        <span class="c1"># 其他/下的就转发给socket处理</span>
+        <span class="kn">proxy_set_header</span> <span class="s">Host</span> <span class="nv">$host</span><span class="p">;</span>
+        <span class="kn">proxy_pass</span> <span class="s">http://unix:/tmp/bin.lotiger.cn.socket</span><span class="p">;</span>  <span class="c1"># 固定格式 修改对应的server_name</span>
+    <span class="p">}</span>
+ <span class="p">}</span>
+</pre></div>
+<h4>安装Gunicorn和启动</h4>
+<pre><code># 直接pip安装即可
+pip install gunicorn
+
+# 进入自己的项目目录  daemon设置为守护进程，bind绑定socket
+gunicorn --daemon --workers 2 --bind unix:/tmp/bin.lotiger.cn.socket binblog.wsgi:application
+</code></pre>
+<p>docker rm -f nginx mysql django-blog</p>
+
+            
+            
+            
+
+        </section>
+
+        <aside id="sidebar">
+            <blockquote class="route">关于我</blockquote>
+            <p>19本科毕业生，代码的搬运工，此界面灵感来自公众号【运维咖啡吧】</p>
+            
+            <blockquote class="route">Github地址</blockquote>
+            <a href="https://github.com/enjoy-binbin">
+                <img border="0" src="https://avatars2.githubusercontent.com/u/22811481" width="100%" height="100%" alt="enjoy-binbin"/>
+            </a>
+            
+            
+        </aside>
+    </div>
+</div>
+</body>
+
+</html>

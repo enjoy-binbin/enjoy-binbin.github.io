@@ -1,0 +1,82 @@
+
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta name="theme-color" content="#2879d0"/>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1"/>
+    <meta name="copyright" content="©2020 测试所有"/>
+    <link rel="stylesheet" href="/css/style.min.css" media="screen" type="text/css"/>
+
+    <!-- Begin SEO tag -->
+    <title>django重载认证</title>
+    <meta property="og:locale" content="zh_CN"/>
+    <meta property="og:type" content="article"/>
+    <meta property="og:title" content="django重载认证"/>
+    <meta property="og:description" content="django重载认证"/>
+    <meta property="og:url" content="#"/>
+    <meta property="og:site_name" content="django重载认证"/>
+    <meta name="description" content="django重载认证"/>
+    <!-- End SEO tag -->
+</head>
+
+<body>
+<header>
+    <div class="inner">
+        <a href="/">
+            <h1>彬彬同学丶</h1>
+        </a>
+        <h2>Choose what you love,love what you choose.</h2>
+    </div>
+</header>
+
+<div id="content-wrapper">
+    <div class="inner clearfix">
+        <section id="main-content">
+        
+            
+                <h1 id="art-title">django重载认证</h1>
+            
+            
+            
+                <p>记录一下</p>
+<pre><code>class CustomBackend(ModelBackend):
+    """
+        settings里配置AUTHENTICATION_BACKENDS
+        这里将email和username和nickname都当作username进行Q并起来
+    """
+def authenticate(self, request, username=None, password=None, **kwargs):
+    try:
+        user = UserProfile.objects.get(Q(username=username) | Q(nickname=username) | Q(email=username))
+        if user.check_password(password):
+            return user
+    except Exception as e:
+        return None
+</code></pre>
+<p>settings里
+AUTHENTICATION_BACKENDS = (
+    'users.views.CustomBackend',
+)</p>
+
+            
+            
+            
+
+        </section>
+
+        <aside id="sidebar">
+            <blockquote class="route">关于我</blockquote>
+            <p>19本科毕业生，代码的搬运工，此界面灵感来自公众号【运维咖啡吧】</p>
+            
+            <blockquote class="route">Github地址</blockquote>
+            <a href="https://github.com/enjoy-binbin">
+                <img border="0" src="https://avatars2.githubusercontent.com/u/22811481" width="100%" height="100%" alt="enjoy-binbin"/>
+            </a>
+            
+            
+        </aside>
+    </div>
+</div>
+</body>
+
+</html>

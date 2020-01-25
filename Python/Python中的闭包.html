@@ -1,0 +1,183 @@
+
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta name="theme-color" content="#2879d0"/>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1"/>
+    <meta name="copyright" content="©2020 测试所有"/>
+    <link rel="stylesheet" href="/css/style.min.css" media="screen" type="text/css"/>
+
+    <!-- Begin SEO tag -->
+    <title>Python中的闭包</title>
+    <meta property="og:locale" content="zh_CN"/>
+    <meta property="og:type" content="article"/>
+    <meta property="og:title" content="Python中的闭包"/>
+    <meta property="og:description" content="Python中的闭包"/>
+    <meta property="og:url" content="#"/>
+    <meta property="og:site_name" content="Python中的闭包"/>
+    <meta name="description" content="Python中的闭包"/>
+    <!-- End SEO tag -->
+</head>
+
+<body>
+<header>
+    <div class="inner">
+        <a href="/">
+            <h1>彬彬同学丶</h1>
+        </a>
+        <h2>Choose what you love,love what you choose.</h2>
+    </div>
+</header>
+
+<div id="content-wrapper">
+    <div class="inner clearfix">
+        <section id="main-content">
+        
+            
+                <h1 id="art-title">Python中的闭包</h1>
+            
+            
+            
+                <p>这里简单的记录下Python中的闭包，闭包在程序设计中还是非常常出现的。</p>
+<p><em>下面一些示例代码Base on Python3.6</em></p>
+<p><strong>首先</strong>，闭包和匿名函数不是同一个东西，匿名函数，更多特指那些没有名字的函数。</p>
+<p>要理解闭包，得先讲下作用域。</p>
+<p>Python中的的作用域一共有4种，分别是：</p>
+<ul>
+<li><strong>L（Local）</strong>：最内层，包含局部变量，比如一个函数/方法（一般指类中定义的函数）内部。</li>
+<li><strong>E（Enclosing）</strong>：包含了非局部（non-local）也非全局（non-global）的变量。比如两个嵌套函数，一个函数（或类） A 里面又包含了一个函数 B ，那么对于 B 中的名称来说 A 中的作用域就为 nonlocal。</li>
+<li><strong>G（Global）</strong>：当前脚本的最外层，比如当前模块的全局变量。</li>
+<li><strong>B（Built-in）</strong>： 包含了内建的变量/关键字等。最后被搜索</li>
+</ul>
+<p>规则顺序： <strong>L –&gt; E –&gt; G –&gt; B</strong>。一个地方找不到，会一直往后找。</p>
+<p>其实，闭包指延伸了作用域的函数，其中包含函数定义体中的引用，但是不是在定义体中定义的非全局变量，函数是不是匿名的没有关系，关键是它可以访问定义体之外定义的非全局变量。</p>
+<p>这个说的还是有点绕口，需要通过示例理解。下面例子来自fluent python</p>
+<p>假如有个名为avg的函数，它的作用是计算不断增加的系列值得平均数。例如，整个历史中某个商品的平均收盘价，每天都会增加新价格，因此平均值要考虑至目前为止所有的价格。</p>
+<p>一：使用类实现，每次有新的值，就将其加入类实例avg里的一个属性中。其中定义了<code>__call__</code>方法，类实例是可调用对象，历史值存放在<code>self.series</code>中</p>
+<div class="highlight"><pre><span></span><span class="k">class</span> <span class="nc">Averager</span><span class="p">():</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">series</span> <span class="o">=</span> <span class="p">[]</span>  <span class="c1"># 存放着历史值</span>
+
+    <span class="k">def</span> <span class="fm">__call__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">new_value</span><span class="p">):</span>  <span class="c1"># 示例是可调动对象</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">series</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">new_value</span><span class="p">)</span>
+        <span class="n">total</span> <span class="o">=</span> <span class="nb">sum</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">series</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">total</span> <span class="o">//</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">series</span><span class="p">)</span>
+
+<span class="n">avg</span> <span class="o">=</span> <span class="n">Averager</span><span class="p">()</span>
+<span class="k">print</span><span class="p">(</span><span class="n">avg</span><span class="p">(</span><span class="mi">10</span><span class="p">))</span>  <span class="c1"># 10</span>
+<span class="k">print</span><span class="p">(</span><span class="n">avg</span><span class="p">(</span><span class="mi">20</span><span class="p">))</span>  <span class="c1"># 15</span>
+<span class="k">print</span><span class="p">(</span><span class="n">avg</span><span class="p">(</span><span class="mi">30</span><span class="p">))</span>  <span class="c1"># 20</span>
+</pre></div>
+<p>二：使用函数实现，调用<code>make_averager</code>时，会返回一个averager函数对象，每次调用它的时候，会将参数添加的系列值列表中，返回计算。</p>
+<div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">make_averager</span><span class="p">():</span>
+    <span class="n">series</span> <span class="o">=</span> <span class="p">[]</span>  <span class="c1"># make_averager函数的局部变量</span>
+
+    <span class="k">def</span> <span class="nf">averager</span><span class="p">(</span><span class="n">new_value</span><span class="p">):</span>
+        <span class="n">series</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">new_value</span><span class="p">)</span>  <span class="c1"># 访问了定义体之外的非全局变量</span>
+        <span class="k">return</span> <span class="nb">sum</span><span class="p">(</span><span class="n">series</span><span class="p">)</span> <span class="o">//</span> <span class="nb">len</span><span class="p">(</span><span class="n">series</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">averager</span>
+
+<span class="n">avg</span> <span class="o">=</span> <span class="n">make_averager</span><span class="p">()</span>  <span class="c1"># 获得返回的averager函数引用</span>
+<span class="k">print</span><span class="p">(</span><span class="n">avg</span><span class="p">(</span><span class="mi">10</span><span class="p">))</span>  <span class="c1"># 10</span>
+<span class="k">print</span><span class="p">(</span><span class="n">avg</span><span class="p">(</span><span class="mi">20</span><span class="p">))</span>  <span class="c1"># 15</span>
+<span class="k">print</span><span class="p">(</span><span class="n">avg</span><span class="p">(</span><span class="mi">30</span><span class="p">))</span>  <span class="c1"># 20</span>
+</pre></div>
+<p>例子很简单，但是我们明白<code>series</code>是一个局部变量，当第一次调用<code>avg(10)</code>的时候，<code>make_averager</code>函数已经返回了，而它的本地作用域其实也一去不复返了。</p>
+<p>在<code>averager</code>函数中，<code>series</code>是自由变量（free variable，技术用语），指未在本地作用域中绑定的变量，而上面<code>make_averager</code>的定义体，就是一个闭包了。</p>
+<p>对返回的<code>avg，也就是averager对象</code>追踪下，可以发现Python在<code>__code__</code>属性（表示编译后的函数定义体）中保存了局部变量和自由变量的名称。而<code>series</code>的绑定是在<code>__closure__</code>属性中，<code>__closure__</code>中的各个元素对应于<code>__code__.co_freevars</code>中的名称，这些元素从下面的打印值可以看出是一个个的<code>cell</code>对象，里面有个<code>cell_contents</code>属性保存着真正的值</p>
+<p><em>对于cell对象官方文档：<a href="https://docs.python.org/zh-cn/3.6/c-api/cell.html">https://docs.python.org/zh-cn/3.6/c-api/cell.html</a></em></p>
+<div class="highlight"><pre><span></span><span class="k">print</span><span class="p">(</span><span class="n">avg</span><span class="o">.</span><span class="vm">__code__</span><span class="o">.</span><span class="n">co_varnames</span><span class="p">)</span>
+<span class="c1"># (&#39;new_value&#39;,)  局部变量</span>
+
+<span class="k">print</span><span class="p">(</span><span class="n">avg</span><span class="o">.</span><span class="vm">__code__</span><span class="o">.</span><span class="n">co_freevars</span><span class="p">)</span>
+<span class="c1"># (&#39;series&#39;,)  自由变量</span>
+
+<span class="k">print</span><span class="p">(</span><span class="n">avg</span><span class="o">.</span><span class="vm">__closure__</span><span class="p">)</span>
+<span class="c1"># &lt;cell at 0x103f63f78: list object at 0x103fc5148&gt;,)  是个cell对象</span>
+
+<span class="k">print</span><span class="p">(</span><span class="n">avg</span><span class="o">.</span><span class="vm">__closure__</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">cell_contents</span><span class="p">)</span>
+<span class="c1"># [10, 20, 30], cell对象有个cell_contens属性, 保存着真正的值</span>
+</pre></div>
+<p>综上，闭包是一种函数，它会保留定义函数时存在的自由变量的绑定，这有在调用函数的时候，虽然定义作用域不可用了，但是仍然能在外部使用到之前的绑定。</p>
+<p>注意：只有嵌套在其他函数中的函数，才有可能需要处理不在全局作用域中的外部变量。</p>
+<p>我们稍微改进下前面的那个函数，每次都存储着历史系列值，效率不够好，对于求均值，更好的实现方式是，只存目前的总值和元素个数，然后使用这两个数计算均值，这样空间复杂度是不是就变成O(2)了，而时间复杂度也变成了O(1)</p>
+<p>下面的实现很简单，但是竟然报错了，这是为啥嘞？</p>
+<div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">make_averager</span><span class="p">():</span>
+    <span class="n">total</span> <span class="o">=</span> <span class="n">count</span> <span class="o">=</span> <span class="mi">0</span>
+
+    <span class="k">def</span> <span class="nf">averager</span><span class="p">(</span><span class="n">new_value</span><span class="p">):</span>
+        <span class="n">count</span> <span class="o">+=</span> <span class="mi">1</span>
+        <span class="n">total</span> <span class="o">+=</span> <span class="n">new_value</span>
+        <span class="k">return</span> <span class="n">total</span> <span class="o">//</span> <span class="n">count</span>
+
+    <span class="k">return</span> <span class="n">averager</span>
+
+<span class="n">avg</span> <span class="o">=</span> <span class="n">make_averager</span><span class="p">()</span>
+<span class="k">print</span><span class="p">(</span><span class="n">avg</span><span class="p">(</span><span class="mi">10</span><span class="p">))</span>
+
+<span class="n">binbin</span><span class="nd">@HansomedeMacBook</span><span class="o">-</span><span class="n">Pro</span> <span class="o">~/</span><span class="n">Desktop</span><span class="o">&gt;</span> <span class="n">python3</span> <span class="mf">1.</span><span class="n">py</span>
+<span class="n">Traceback</span> <span class="p">(</span><span class="n">most</span> <span class="n">recent</span> <span class="n">call</span> <span class="n">last</span><span class="p">):</span>
+  <span class="n">File</span> <span class="s2">&quot;1.py&quot;</span><span class="p">,</span> <span class="n">line</span> <span class="mi">13</span><span class="p">,</span> <span class="ow">in</span> <span class="o">&lt;</span><span class="n">module</span><span class="o">&gt;</span>
+    <span class="k">print</span><span class="p">(</span><span class="n">avg</span><span class="p">(</span><span class="mi">10</span><span class="p">))</span>  <span class="c1"># 10</span>
+  <span class="n">File</span> <span class="s2">&quot;1.py&quot;</span><span class="p">,</span> <span class="n">line</span> <span class="mi">5</span><span class="p">,</span> <span class="ow">in</span> <span class="n">averager</span>
+    <span class="n">count</span> <span class="o">+=</span> <span class="mi">1</span>
+<span class="ne">UnboundLocalError</span><span class="p">:</span> <span class="n">local</span> <span class="n">variable</span> <span class="s1">&#39;count&#39;</span> <span class="n">referenced</span> <span class="n">before</span> <span class="n">assignment</span>
+</pre></div>
+<p>因为<code>count</code>是数字，数字是不可变类型（number, str, tuple 为它们重新赋值，已经不是同一个对象了）。<code>count += 1</code>作用其实和<code>count = count + 1</code>一样。这是个赋值语句，会把count变成局部变量，这有它就不是自由变量了，就也不会保存在闭包中了。</p>
+<p>而之前的列表series没有这个问题，是因为我们没有给它进行赋值操作，只是调用了<code>append</code>，并且把它传给了<code>sum和len</code>。这里利用了列表是可变的对象这一事实。</p>
+<p>为了解决这一问题，Python3中引入了<code>nonlocal</code>声明，它的作用是把变量标记为自由变量，即使是在函数中为变量重新赋值了，也还是个自由变量，就还是会存在在闭包中。</p>
+<div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">make_averager</span><span class="p">():</span>
+    <span class="n">total</span> <span class="o">=</span> <span class="n">count</span> <span class="o">=</span> <span class="mi">0</span>
+
+    <span class="k">def</span> <span class="nf">averager</span><span class="p">(</span><span class="n">new_value</span><span class="p">):</span>
+        <span class="n">nonlocal</span> <span class="n">total</span><span class="p">,</span> <span class="n">count</span>  <span class="c1"># nonlocal</span>
+        <span class="n">count</span> <span class="o">+=</span> <span class="mi">1</span>
+        <span class="n">total</span> <span class="o">+=</span> <span class="n">new_value</span>
+        <span class="k">return</span> <span class="n">total</span> <span class="o">//</span> <span class="n">count</span>
+
+    <span class="k">return</span> <span class="n">averager</span>
+
+<span class="n">avg</span> <span class="o">=</span> <span class="n">make_averager</span><span class="p">()</span>
+
+<span class="k">print</span><span class="p">(</span><span class="n">avg</span><span class="p">(</span><span class="mi">10</span><span class="p">))</span>
+<span class="k">print</span><span class="p">(</span><span class="n">avg</span><span class="p">(</span><span class="mi">20</span><span class="p">))</span>
+<span class="k">print</span><span class="p">(</span><span class="n">avg</span><span class="p">(</span><span class="mi">30</span><span class="p">))</span>
+<span class="k">print</span><span class="p">(</span><span class="n">avg</span><span class="o">.</span><span class="vm">__code__</span><span class="o">.</span><span class="n">co_varnames</span><span class="p">)</span>
+<span class="k">print</span><span class="p">(</span><span class="n">avg</span><span class="o">.</span><span class="vm">__code__</span><span class="o">.</span><span class="n">co_freevars</span><span class="p">)</span>
+<span class="k">print</span><span class="p">(</span><span class="n">avg</span><span class="o">.</span><span class="vm">__closure__</span><span class="p">)</span>
+<span class="k">print</span><span class="p">(</span><span class="n">avg</span><span class="o">.</span><span class="vm">__closure__</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">cell_contents</span><span class="p">,</span> <span class="n">avg</span><span class="o">.</span><span class="vm">__closure__</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">cell_contents</span><span class="p">)</span>
+</pre></div>
+<p>让我们来看看加入nonlocal后的输出</p>
+<div class="highlight"><pre><span></span>binbin@HansomedeMacBook-Pro ~/Desktop&gt; python3 <span class="m">1</span>.py
+<span class="m">10</span>
+<span class="m">15</span>
+<span class="m">20</span>
+<span class="o">(</span><span class="s1">&#39;new_value&#39;</span>,<span class="o">)</span>
+<span class="o">(</span><span class="s1">&#39;count&#39;</span>, <span class="s1">&#39;total&#39;</span><span class="o">)</span>
+<span class="o">(</span>&lt;cell at 0x10126af78: int object at 0x100ebd870&gt;, &lt;cell at 0x10126afd8: int object at 0x100ebdf90&gt;<span class="o">)</span>
+<span class="m">3</span> <span class="m">60</span>
+</pre></div>
+
+            
+            
+            
+
+        </section>
+
+        <aside id="sidebar">
+            <blockquote class="route">关于我</blockquote>
+            <p>19本科毕业生，代码的搬运工，此界面灵感来自公众号【运维咖啡吧】</p>
+            
+            <blockquote class="route">Github地址</blockquote>
+            <a href="https://github.com/enjoy-binbin">
+                <img border="0" src="https://avatars2.githubusercontent.com/u/22811481" width="100%" height="100%" alt="enjoy-binbin"/>
+            </a>
+            
+            
+        </aside>
+    </div>
+</div>
+</body>
+
+</html>

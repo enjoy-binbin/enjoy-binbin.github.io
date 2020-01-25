@@ -1,0 +1,110 @@
+
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta name="theme-color" content="#2879d0"/>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1"/>
+    <meta name="copyright" content="©2020 测试所有"/>
+    <link rel="stylesheet" href="/css/style.min.css" media="screen" type="text/css"/>
+
+    <!-- Begin SEO tag -->
+    <title>Centos7.2下 源码编译安装 lnmp环境( 下 )</title>
+    <meta property="og:locale" content="zh_CN"/>
+    <meta property="og:type" content="article"/>
+    <meta property="og:title" content="Centos7.2下 源码编译安装 lnmp环境( 下 )"/>
+    <meta property="og:description" content="Centos7.2下 源码编译安装 lnmp环境( 下 )"/>
+    <meta property="og:url" content="#"/>
+    <meta property="og:site_name" content="Centos7.2下 源码编译安装 lnmp环境( 下 )"/>
+    <meta name="description" content="Centos7.2下 源码编译安装 lnmp环境( 下 )"/>
+    <!-- End SEO tag -->
+</head>
+
+<body>
+<header>
+    <div class="inner">
+        <a href="/">
+            <h1>彬彬同学丶</h1>
+        </a>
+        <h2>Choose what you love,love what you choose.</h2>
+    </div>
+</header>
+
+<div id="content-wrapper">
+    <div class="inner clearfix">
+        <section id="main-content">
+        
+            
+                <h1 id="art-title">Centos7.2下 源码编译安装 lnmp环境( 下 )</h1>
+            
+            
+            
+                <h3><span class="ue_t" style="font-family:幼圆">前言<br/> </span></h3><p style="text-indent:2em;">这篇承接着上一篇 lnmp 环境的配置, 对nginx的一些配置, 以及对blog系统测试</p><p style="text-indent:2em;">以及配置过程中遇到的问题，和知识点的总结记录</p><h3><span style="font-family:幼圆">nginx日志<br/> </span></h3><p style="text-indent:2em;">nginx启动后在 nginx目录下会产生个logs 文件夹里面保存着一些日志文件</p><p style="text-indent:2em;">其中nginx.pid 中记录了nginx的pid&nbsp;&nbsp;&nbsp;&nbsp;cat /usr/local/nginx/logs/nginx.pid</p><p style="text-indent:2em;">access.log 中记录了 用户访问nginx的信息&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; error.log 中记录了 错误信息</p><h3><span style="font-family:幼圆"># 80端口占用<br/> </span></h3><pre class="brush:bash;toolbar:false">&nbsp;&nbsp;&nbsp;ps&nbsp;-aux&nbsp;|&nbsp;grep&nbsp;80&nbsp;&nbsp;&nbsp;&nbsp;
+&nbsp;&nbsp;&nbsp;ps&nbsp;-aux&nbsp;|&nbsp;grep&nbsp;nginx</pre><p>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;因为在自己服务器上有着之前配置的 lamp 环境, 所以存在着 apache占用了80端口的情况</p><p>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;#修改nginx配置文件 监听端口 8000</p><pre class="brush:bash;toolbar:false">&nbsp;&nbsp;&nbsp;cd&nbsp;/usr/local/nginx
+&nbsp;&nbsp;&nbsp;cd&nbsp;conf
+&nbsp;&nbsp;&nbsp;vi&nbsp;nginx.conf
+&nbsp;&nbsp;&nbsp;36行&nbsp;listen&nbsp;8000
+&nbsp;&nbsp;&nbsp;cd&nbsp;../sbin
+&nbsp;&nbsp;&nbsp;./nginx</pre><h3><span class="ue_t" style="font-family:幼圆"></span></h3><h3><span style="font-family:幼圆"># nginx 的命令参数</span></h3><pre class="brush:bash;toolbar:false">&nbsp;&nbsp;&nbsp;#&nbsp;nginx主程序在&nbsp;/nginx/sbin目录下
+&nbsp;&nbsp;&nbsp;进入目录&nbsp;&nbsp;./nginx&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;启动nginx
+
+&nbsp;&nbsp;&nbsp;./nginx&nbsp;-t&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;测试配置是否正确
+&nbsp;&nbsp;&nbsp;./nginx&nbsp;-s&nbsp;reload&nbsp;&nbsp;&nbsp;&nbsp;加载最新配置&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;kill&nbsp;-HUP&nbsp;nginx.pid
+&nbsp;&nbsp;&nbsp;./nginx&nbsp;-s&nbsp;stop&nbsp;&nbsp;&nbsp;&nbsp;立即停止nginx&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;kill&nbsp;-TERM
+&nbsp;&nbsp;&nbsp;./nginx&nbsp;-s&nbsp;quit&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;优雅停止nginx
+&nbsp;&nbsp;&nbsp;./nginx&nbsp;-s&nbsp;reopen&nbsp;&nbsp;&nbsp;&nbsp;重新打开日志文件</pre><h3><span style="font-family:幼圆"># yum安装时提示保护多库版本的解决</span></h3><pre class="brush:bash;toolbar:false">&nbsp;&nbsp;&nbsp;yum&nbsp;install&nbsp;--setopt=protected_multilib=false&nbsp;zlib</pre><h3><span style="font-family:幼圆"># nginx下支持 blog/index.php&nbsp; -&gt; blog</span></h3><pre class="brush:bash;toolbar:false">&nbsp;&nbsp;&nbsp;&nbsp;location&nbsp;/&nbsp;{&nbsp;&nbsp;&nbsp;&nbsp;
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;root&nbsp;&nbsp;&nbsp;html;
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;index&nbsp;&nbsp;index.php&nbsp;index.html&nbsp;index.htm;
+&nbsp;&nbsp;&nbsp;&nbsp;}
+&nbsp;&nbsp;&nbsp;&nbsp;#&nbsp;重新reload加载配置文件
+&nbsp;&nbsp;&nbsp;&nbsp;/usr/local/nginx/sbin/nginx&nbsp;-s&nbsp;reload</pre><h3><span style="font-family:幼圆"># nginx 支持pathinfo</span></h3><pre class="brush:bash;toolbar:false">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;#&nbsp;&nbsp;nginx默认不支持&nbsp;pathinfo&nbsp;,&nbsp;这样像thinkphp中的路由便无法支持&nbsp;
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;#&nbsp;&nbsp;index.php/Admin/Index/index
+&nbsp;&nbsp;&nbsp;&nbsp;#&nbsp;这里提供了两种方法&nbsp;第一种为典型配置,&nbsp;第二种来自燕十八老师
+&nbsp;&nbsp;&nbsp;&nbsp;
+&nbsp;&nbsp;&nbsp;&nbsp;#&nbsp;典型配置
+&nbsp;&nbsp;&nbsp;&nbsp;location&nbsp;~&nbsp;\.php$&nbsp;{
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;root&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;html;
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;fastcgi_pass&nbsp;&nbsp;&nbsp;127.0.0.1:9000;
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;fastcgi_index&nbsp;&nbsp;index.php;
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;fastcgi_param&nbsp;&nbsp;SCRIPT_FILENAME&nbsp;&nbsp;$DOCUMENT_ROOT$fastcgi_script_name;
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;include&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;fastcgi_params;
+&nbsp;&nbsp;&nbsp;&nbsp;}
+&nbsp;&nbsp;&nbsp;&nbsp;
+&nbsp;&nbsp;&nbsp;&nbsp;#&nbsp;修改第1,6行,支持pathinfo&nbsp;(from&nbsp;十八哥)
+&nbsp;&nbsp;&nbsp;&nbsp;location&nbsp;~&nbsp;\.php(.*)$&nbsp;{&nbsp;#&nbsp;正则匹配.php后的pathinfo部分
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;root&nbsp;html;
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;fastcgi_pass&nbsp;&nbsp;&nbsp;127.0.0.1:9000;
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;fastcgi_index&nbsp;&nbsp;index.php;
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;fastcgi_param&nbsp;&nbsp;SCRIPT_FILENAME&nbsp;&nbsp;$DOCUMENT_ROOT$fastcgi_script_name;
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;fastcgi_param&nbsp;PATH_INFO&nbsp;$1;&nbsp;#&nbsp;把pathinfo部分赋给PATH_INFO变量
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;include&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;fastcgi_params;
+&nbsp;&nbsp;&nbsp;&nbsp;}</pre><h3><span style="font-family:幼圆"># nginx 重写rewrite隐藏index.php</span></h3><pre class="brush:bash;toolbar:false">&nbsp;&nbsp;&nbsp;location&nbsp;/blog&nbsp;{&nbsp;&nbsp;#&nbsp;项目目录
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;root&nbsp;&nbsp;&nbsp;html;
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;index&nbsp;&nbsp;index.php&nbsp;index.html&nbsp;index.htm;
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;#&nbsp;url重写规则&nbsp;注意空格
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;if&nbsp;(&nbsp;!-e&nbsp;$request_filename)&nbsp;{
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;rewrite&nbsp;(.*)$&nbsp;/blog/index.php/$1;
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;}
+&nbsp;&nbsp;&nbsp;&nbsp;}</pre><h3><span style="font-family:幼圆"># laravel框架需要 stroage目录权限, bootstrap/cache目录权限</span>&nbsp;&nbsp; &nbsp; &nbsp;&nbsp; <br/> </h3>
+            
+            
+            
+
+        </section>
+
+        <aside id="sidebar">
+            <blockquote class="route">关于我</blockquote>
+            <p>19本科毕业生，代码的搬运工，此界面灵感来自公众号【运维咖啡吧】</p>
+            
+            <blockquote class="route">Github地址</blockquote>
+            <a href="https://github.com/enjoy-binbin">
+                <img border="0" src="https://avatars2.githubusercontent.com/u/22811481" width="100%" height="100%" alt="enjoy-binbin"/>
+            </a>
+            
+            
+        </aside>
+    </div>
+</div>
+</body>
+
+</html>

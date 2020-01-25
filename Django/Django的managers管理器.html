@@ -1,0 +1,87 @@
+
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta name="theme-color" content="#2879d0"/>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1"/>
+    <meta name="copyright" content="©2020 测试所有"/>
+    <link rel="stylesheet" href="/css/style.min.css" media="screen" type="text/css"/>
+
+    <!-- Begin SEO tag -->
+    <title>Django的managers管理器</title>
+    <meta property="og:locale" content="zh_CN"/>
+    <meta property="og:type" content="article"/>
+    <meta property="og:title" content="Django的managers管理器"/>
+    <meta property="og:description" content="Django的managers管理器"/>
+    <meta property="og:url" content="#"/>
+    <meta property="og:site_name" content="Django的managers管理器"/>
+    <meta name="description" content="Django的managers管理器"/>
+    <!-- End SEO tag -->
+</head>
+
+<body>
+<header>
+    <div class="inner">
+        <a href="/">
+            <h1>彬彬同学丶</h1>
+        </a>
+        <h2>Choose what you love,love what you choose.</h2>
+    </div>
+</header>
+
+<div id="content-wrapper">
+    <div class="inner clearfix">
+        <section id="main-content">
+        
+            
+                <h1 id="art-title">Django的managers管理器</h1>
+            
+            
+            
+                <h3>Django的managers</h3>
+<p>文档地址：<a href="https://docs.djangoproject.com/en/2.1/topics/db/managers/">https://docs.djangoproject.com/en/2.1/topics/db/managers/</a></p>
+<p>Article.objects.all()    objects就是一个manager管理器，django会默认给所有模型增添上objects管理器</p>
+<p>下面是创建自定义manager的两个原因： 增加额外的manager方法，或修改manager返回的初始QuerySet。</p>
+<p>增加额外的manager方法可以将经常使用的查询进行封装，就不用重复编码了</p>
+<h4>修改manager返回的初始QuerySet简单用法：</h4>
+<p>场景：在博客中，找出所有的一级分类</p>
+<p>当然，我们可以 Category.objects.filter(parent_category=None)</p>
+<p>或者，用管理器 Category.top_objects.all()</p>
+<div class="highlight"><pre><span></span><span class="k">class</span> <span class="nc">TopCategoryManager</span><span class="p">(</span><span class="n">models</span><span class="o">.</span><span class="n">Manager</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot; Django.Manager的用法，定义管理器，返回一级分类 &quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="nf">get_queryset</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="n">get_queryset</span><span class="p">()</span><span class="o">.</span><span class="n">filter</span><span class="p">(</span><span class="n">parent_category</span><span class="o">=</span><span class="bp">None</span><span class="p">)</span>
+
+<span class="k">class</span> <span class="nc">Category</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot; 文章分类 &quot;&quot;&quot;</span>
+    <span class="n">name</span> <span class="o">=</span> <span class="n">models</span><span class="o">.</span><span class="n">CharField</span><span class="p">(</span><span class="s1">&#39;分类名称&#39;</span><span class="p">,</span> <span class="n">max_length</span><span class="o">=</span><span class="mi">30</span><span class="p">,</span> <span class="n">unique</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
+    <span class="n">parent_category</span> <span class="o">=</span> <span class="n">models</span><span class="o">.</span><span class="n">ForeignKey</span><span class="p">(</span><span class="s1">&#39;self&#39;</span><span class="p">,</span> <span class="n">verbose_name</span><span class="o">=</span><span class="s1">&#39;父级分类&#39;</span><span class="p">,</span> <span class="n">blank</span><span class="o">=</span><span class="bp">True</span><span class="p">,</span> <span class="n">null</span><span class="o">=</span><span class="bp">True</span><span class="p">,</span> <span class="n">on_delete</span><span class="o">=</span><span class="n">models</span><span class="o">.</span><span class="n">CASCADE</span><span class="p">)</span>
+
+    <span class="n">objects</span> <span class="o">=</span> <span class="n">models</span><span class="o">.</span><span class="n">Manager</span><span class="p">()</span>  <span class="c1"># 当自定义了管理器，django将不再默认管理对象objects了, 需要手动指定</span>
+    <span class="n">top_objects</span> <span class="o">=</span> <span class="n">TopCategoryManager</span><span class="p">()</span>  <span class="c1"># 调用方式: Category.top_object.all()</span>
+</pre></div>
+
+            
+            
+            
+
+        </section>
+
+        <aside id="sidebar">
+            <blockquote class="route">关于我</blockquote>
+            <p>19本科毕业生，代码的搬运工，此界面灵感来自公众号【运维咖啡吧】</p>
+            
+            <blockquote class="route">Github地址</blockquote>
+            <a href="https://github.com/enjoy-binbin">
+                <img border="0" src="https://avatars2.githubusercontent.com/u/22811481" width="100%" height="100%" alt="enjoy-binbin"/>
+            </a>
+            
+            
+        </aside>
+    </div>
+</div>
+</body>
+
+</html>

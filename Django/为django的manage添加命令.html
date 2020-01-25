@@ -1,0 +1,136 @@
+
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta name="theme-color" content="#2879d0"/>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1"/>
+    <meta name="copyright" content="©2020 测试所有"/>
+    <link rel="stylesheet" href="/css/style.min.css" media="screen" type="text/css"/>
+
+    <!-- Begin SEO tag -->
+    <title>为django的manage添加命令</title>
+    <meta property="og:locale" content="zh_CN"/>
+    <meta property="og:type" content="article"/>
+    <meta property="og:title" content="为django的manage添加命令"/>
+    <meta property="og:description" content="为django的manage添加命令"/>
+    <meta property="og:url" content="#"/>
+    <meta property="og:site_name" content="为django的manage添加命令"/>
+    <meta name="description" content="为django的manage添加命令"/>
+    <!-- End SEO tag -->
+</head>
+
+<body>
+<header>
+    <div class="inner">
+        <a href="/">
+            <h1>彬彬同学丶</h1>
+        </a>
+        <h2>Choose what you love,love what you choose.</h2>
+    </div>
+</header>
+
+<div id="content-wrapper">
+    <div class="inner clearfix">
+        <section id="main-content">
+        
+            
+                <h1 id="art-title">为django的manage添加命令</h1>
+            
+            
+            
+                <h3>为django的manage添加命令</h3>
+<p>文档地址：<a href="https://docs.djangoproject.com/en/2.1/howto/custom-management-commands/">https://docs.djangoproject.com/en/2.1/howto/custom-management-commands/</a></p>
+<p>在已注册的app目录下 创建 <code>management目录</code>和，接着在在management目录下创建<code>commands目录</code>和<code>__init__.py文件</code>，最后在<code>commands目录</code>下创<code>建命令py文件</code>和<code>__init__.py</code>，文件名即为命令</p>
+<p>django/core/management/commands/...  (django的命令源码)</p>
+<p>下面创建一个命令create_testdata，执行命令后会向表里插入一些博客测试数据</p>
+<div class="highlight"><pre><span></span><span class="c"># 目录结构为</span>
+<span class="err">├─</span><span class="n">management</span>
+<span class="err">│</span>  <span class="err">│</span>  <span class="n">__init__</span><span class="p">.</span><span class="n">py</span>
+<span class="err">│</span>  <span class="err">│</span>
+<span class="err">│</span>  <span class="err">└─</span><span class="n">commands</span>
+<span class="err">│</span>          <span class="n">create_testdata</span><span class="p">.</span><span class="n">py</span>
+<span class="err">│</span>          <span class="n">__init__</span><span class="p">.</span><span class="n">py</span>
+</pre></div>
+<p>create_testdata.py文件</p>
+<div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">django.core.management.base</span> <span class="kn">import</span> <span class="n">BaseCommand</span>
+<span class="kn">from</span> <span class="nn">django.contrib.auth</span> <span class="kn">import</span> <span class="n">get_user_model</span>
+
+<span class="kn">from</span> <span class="nn">blog.models</span> <span class="kn">import</span> <span class="n">Article</span><span class="p">,</span> <span class="n">Tag</span><span class="p">,</span> <span class="n">Category</span>
+
+<span class="n">user_model</span> <span class="o">=</span> <span class="n">get_user_model</span><span class="p">()</span>
+
+
+<span class="k">class</span> <span class="nc">Command</span><span class="p">(</span><span class="n">BaseCommand</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot; run manage.py create_testdata &quot;&quot;&quot;</span>
+    <span class="n">help</span> <span class="o">=</span> <span class="s1">&#39;create test datas&#39;</span>
+
+    <span class="k">def</span> <span class="nf">handle</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">options</span><span class="p">):</span>
+        <span class="c1"># get_or_create 没有便创建, 返回一个元组 (obj, created)</span>
+        <span class="n">user</span> <span class="o">=</span> <span class="n">user_model</span><span class="o">.</span><span class="n">objects</span><span class="o">.</span><span class="n">get_or_create</span><span class="p">(</span>
+            <span class="n">username</span><span class="o">=</span><span class="s1">&#39;testadmin&#39;</span><span class="p">,</span> <span class="n">password</span><span class="o">=</span><span class="s1">&#39;abc123456.0&#39;</span><span class="p">,</span> <span class="n">email</span><span class="o">=</span><span class="s1">&#39;test@qq.com&#39;</span><span class="p">,</span>
+            <span class="n">is_staff</span><span class="o">=</span><span class="bp">True</span><span class="p">,</span> <span class="n">is_superuser</span><span class="o">=</span><span class="bp">True</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
+
+        <span class="n">parent_category</span> <span class="o">=</span> <span class="n">Category</span><span class="o">.</span><span class="n">objects</span><span class="o">.</span><span class="n">get_or_create</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s1">&#39;python学习&#39;</span><span class="p">,</span> <span class="n">parent_category</span><span class="o">=</span><span class="bp">None</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
+
+        <span class="n">sub_category</span> <span class="o">=</span> <span class="n">Category</span><span class="o">.</span><span class="n">objects</span><span class="o">.</span><span class="n">get_or_create</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s1">&#39;django学习&#39;</span><span class="p">,</span> <span class="n">parent_category</span><span class="o">=</span><span class="n">parent_category</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
+
+        <span class="n">basetag</span> <span class="o">=</span> <span class="n">Tag</span><span class="o">.</span><span class="n">objects</span><span class="o">.</span><span class="n">get_or_create</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s1">&#39;Django&#39;</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
+
+        <span class="c1"># 创建20篇测试文章</span>
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">20</span><span class="p">):</span>
+            <span class="n">article</span> <span class="o">=</span> <span class="n">Article</span><span class="o">.</span><span class="n">objects</span><span class="o">.</span><span class="n">get_or_create</span><span class="p">(</span>
+                <span class="n">category</span><span class="o">=</span><span class="n">sub_category</span><span class="p">,</span>
+                <span class="n">title</span><span class="o">=</span><span class="s1">&#39;我是测试标题 &#39;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="n">i</span><span class="p">),</span>
+                <span class="n">content</span><span class="o">=</span><span class="s1">&#39;我是测试内容 &#39;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="n">i</span><span class="p">),</span>
+                <span class="n">author</span><span class="o">=</span><span class="n">user</span>
+            <span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
+            <span class="n">tag</span> <span class="o">=</span> <span class="n">Tag</span><span class="o">.</span><span class="n">objects</span><span class="o">.</span><span class="n">get_or_create</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s1">&#39;标签&#39;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="n">i</span><span class="p">))[</span><span class="mi">0</span><span class="p">]</span>
+
+            <span class="n">article</span><span class="o">.</span><span class="n">tags</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">tag</span><span class="p">)</span>
+            <span class="n">article</span><span class="o">.</span><span class="n">tags</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">basetag</span><span class="p">)</span>
+            <span class="n">article</span><span class="o">.</span><span class="n">save</span><span class="p">()</span>
+
+        <span class="c1"># 创建文章</span>
+        <span class="n">article</span> <span class="o">=</span> <span class="n">Article</span><span class="o">.</span><span class="n">objects</span><span class="o">.</span><span class="n">get_or_create</span><span class="p">(</span>
+            <span class="n">category</span><span class="o">=</span><span class="n">sub_category</span><span class="p">,</span>
+            <span class="n">title</span><span class="o">=</span><span class="s1">&#39;彬彬博客&#39;</span><span class="p">,</span>
+            <span class="n">content</span><span class="o">=</span><span class="s2">&quot;&quot;&quot;### 支持Markdown</span>
+
+<span class="s2">```python</span>
+<span class="s2">print(&#39;支持语法高亮&#39;)</span>
+<span class="s2">```</span>
+<span class="s2">            &quot;&quot;&quot;</span><span class="p">,</span>
+            <span class="n">author</span><span class="o">=</span><span class="n">user</span>
+        <span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="n">article</span><span class="o">.</span><span class="n">tags</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">basetag</span><span class="p">)</span>
+        <span class="n">article</span><span class="o">.</span><span class="n">save</span><span class="p">()</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">stdout</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">style</span><span class="o">.</span><span class="n">SUCCESS</span><span class="p">(</span><span class="s1">&#39;Data created sucessfully！ </span><span class="se">\n</span><span class="s1">&#39;</span><span class="p">))</span>
+</pre></div>
+<p>之后在命令行里运行</p>
+<pre><code>python manage.py create_testdata
+</code></pre>
+
+            
+            
+            
+
+        </section>
+
+        <aside id="sidebar">
+            <blockquote class="route">关于我</blockquote>
+            <p>19本科毕业生，代码的搬运工，此界面灵感来自公众号【运维咖啡吧】</p>
+            
+            <blockquote class="route">Github地址</blockquote>
+            <a href="https://github.com/enjoy-binbin">
+                <img border="0" src="https://avatars2.githubusercontent.com/u/22811481" width="100%" height="100%" alt="enjoy-binbin"/>
+            </a>
+            
+            
+        </aside>
+    </div>
+</div>
+</body>
+
+</html>

@@ -1,0 +1,64 @@
+
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta name="theme-color" content="#2879d0"/>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1"/>
+    <meta name="copyright" content="©2020 测试所有"/>
+    <link rel="stylesheet" href="/css/style.min.css" media="screen" type="text/css"/>
+
+    <!-- Begin SEO tag -->
+    <title>Centos7.2下安装php开发环境</title>
+    <meta property="og:locale" content="zh_CN"/>
+    <meta property="og:type" content="article"/>
+    <meta property="og:title" content="Centos7.2下安装php开发环境"/>
+    <meta property="og:description" content="Centos7.2下安装php开发环境"/>
+    <meta property="og:url" content="#"/>
+    <meta property="og:site_name" content="Centos7.2下安装php开发环境"/>
+    <meta name="description" content="Centos7.2下安装php开发环境"/>
+    <!-- End SEO tag -->
+</head>
+
+<body>
+<header>
+    <div class="inner">
+        <a href="/">
+            <h1>彬彬同学丶</h1>
+        </a>
+        <h2>Choose what you love,love what you choose.</h2>
+    </div>
+</header>
+
+<div id="content-wrapper">
+    <div class="inner clearfix">
+        <section id="main-content">
+        
+            
+                <h1 id="art-title">Centos7.2下安装php开发环境</h1>
+            
+            
+            
+                <p>系统 centos7.2 下安装 php开发环境&nbsp; by 飞翔的渣神丶 2016年11月8日<br/>apache2.4.6<br/>php5.6.27<br/>mariadb&nbsp; (mysql的一个分支)<br/> <br/>0. 设置源<br/>&nbsp;&nbsp; &nbsp;rpm -Uvh https://dl.Fedoraproject.org/pub/epel/epel-release-latest-7.noarch.rpm<br/>&nbsp;&nbsp; &nbsp;rpm -Uvh https://mirror.webtatic.com/yum/el7/webtatic-release.rpm<br/>1. yum 一键安装环境<br/>&nbsp;&nbsp; &nbsp;yum install httpd mariadb-server php56w php56w-mysql php56w-mcrypt php56w-dom php56w-mbstring</p><p>&nbsp;&nbsp;&nbsp;&nbsp;安装gd库<br/> </p><p>&nbsp;&nbsp;&nbsp;&nbsp;yum install php56w-gd</p><p>2. 设置 apache和mysql 开机自启<br/>&nbsp;&nbsp; &nbsp;systemctl start httpd<br/>&nbsp;&nbsp; &nbsp;systemctl enable httpd<br/>&nbsp;&nbsp; &nbsp;*****************说明*********************<br/>&nbsp;&nbsp; &nbsp;mariadb是mysql的一个分支,由mysql创始人带队<br/>&nbsp;&nbsp; &nbsp;由于mysql闭源了,mariadb兼容mysql,且开源<br/>&nbsp;&nbsp; &nbsp;所以现在也开始使用mariadb,mysql转mariadb<br/>&nbsp;&nbsp; &nbsp;******************************************<br/>&nbsp;&nbsp; &nbsp;systemctl start mariadb(mysql)<br/>&nbsp;&nbsp; &nbsp;systemctl enable mariadb(mysqld)<br/>3. 设置mariadb密码<br/>&nbsp;&nbsp; &nbsp;mysql_secure_installation<br/>&nbsp;&nbsp; &nbsp;输入当前密码&nbsp; 默认为空<br/>&nbsp;&nbsp; &nbsp;设置密码 和 确认密码<br/>&nbsp;&nbsp; &nbsp;移除匿名用户 y<br/>&nbsp;&nbsp; &nbsp;禁止root远程登陆 n<br/>&nbsp;&nbsp; &nbsp;删除测试表并访问 n<br/>&nbsp;&nbsp; &nbsp;重新加载权限表 y<br/> <br/>编写测试文件:<br/>cd /var/www/html<br/>vi index.php<br/> <br/>&lt;?php <br/>&nbsp;&nbsp; &nbsp;phpinfo();<br/>?&gt;<br/> <br/> <br/> <br/>扩展1:<br/>&nbsp;&nbsp; &nbsp;修改php.ini文件<br/>&nbsp;&nbsp; &nbsp;cd /<br/>&nbsp;&nbsp; &nbsp;find -name php.ini<br/>&nbsp;&nbsp; &nbsp;cd 进入目录<br/>&nbsp;&nbsp; &nbsp;cp php.ini ./php.ini.bak<br/>&nbsp;&nbsp; &nbsp;vi php.ini<br/>&nbsp;&nbsp;&nbsp; 使用vi的 /string/ 搜索</p><p>&nbsp;&nbsp;&nbsp; 例如&nbsp; /display_errors/</p><p>&nbsp;&nbsp;&nbsp;&nbsp;再按n 后翻一次&nbsp; 找到下面的代码 <br/> </p><p>&nbsp;&nbsp;&nbsp; display_errors = Off<br/>&nbsp;&nbsp; &nbsp;display_startup_errors = Off<br/>&nbsp;&nbsp; &nbsp;off修改为on 提示错误<br/> <br/> <br/> <br/>扩展2:<br/>&nbsp;&nbsp; &nbsp;设置 mariaDB数据库 允许 远程登陆 个人用的是navicat<br/> <br/>&nbsp;&nbsp; &nbsp;host 183.36.65.xxx is not allowed to connect to ... server<br/>&nbsp;&nbsp; &nbsp;本机IP: 183.36.65.xxx 广东省广州市 电信 <br/> <br/>&nbsp;&nbsp; &nbsp;给root允许在所有IP上远程登陆&nbsp; 有所有的权限<br/>&nbsp;&nbsp; &nbsp;mysql -uroot -p<br/>&nbsp;&nbsp; &nbsp;grant all privileges on *.* to root@&#39;%&#39; identified by &#39;自己的密码&#39;;<br/>&nbsp;&nbsp; &nbsp;flush privileges;<br/>&nbsp;&nbsp; &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; &nbsp;<br/>&nbsp;&nbsp; &nbsp; all privileges&nbsp;&nbsp; 所有权限&nbsp; &nbsp;<br/>&nbsp;&nbsp; &nbsp; *.*&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 数据库.表 &nbsp;<br/>&nbsp;&nbsp; &nbsp; root@&#39;%&#39;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 用户@&#39;ip(%表示不限制)&#39; &nbsp;<br/>&nbsp;&nbsp; &nbsp; &#39;自己的密码&#39; 密码<br/> <br/>扩展3:<br/>&nbsp;&nbsp; &nbsp;安装laravel&nbsp; (建议看着文档进行安装)<br/> <br/>&nbsp;&nbsp; &nbsp;先安装 composer<br/>&nbsp;&nbsp; &nbsp;#下载composer安装文件并使用php执行，以便生成一个composer.phar包<br/>&nbsp;&nbsp; &nbsp;curl -sS https://getcomposer.org/installer | php<br/> <br/>&nbsp;&nbsp; &nbsp;# 将生成的composer包放到一个存放命令包的目录，以便系统的$PATH能够搜索到这个命令，这样就可以在命令行直接使用composer命令了。<br/>&nbsp;&nbsp; &nbsp;mv composer.phar /usr/local/bin/composer <br/> <br/>&nbsp;&nbsp; &nbsp;需要注意composer的执行权限<br/>&nbsp;&nbsp; &nbsp;chmod +x /usr/local/bin/composer<br/> <br/>&nbsp;&nbsp; &nbsp;终端上输入　composer&nbsp; 显示提示信息 安装成功<br/> <br/>&nbsp;&nbsp; &nbsp;设置全局配置:&nbsp; composer从中国镜像packagist<br/>&nbsp;&nbsp; &nbsp;composer config -g repo.packagist composer https://packagist.phpcomposer.com<br/> <br/>&nbsp;&nbsp; &nbsp;创建project:<br/>&nbsp;&nbsp; &nbsp;cd 指定项目目录<br/>&nbsp;&nbsp; &nbsp;composer create-project laravel/laravel --prefer-dist<br/>&nbsp;&nbsp; &nbsp;#composer create-project laravel/laravel blog --prefer-dist<br/> <br/>&nbsp;&nbsp; &nbsp;安装 Laravel 之后，可能需要你配置一下目录权限。<br/>&nbsp;&nbsp; &nbsp;web 服务器需要拥有 storage 目录下的所有目录和 bootstrap/cache 目录的写权限。<br/>&nbsp;&nbsp; &nbsp;同理 tp框架下的 runtime目录也需要读写权限<br/> <br/>&nbsp;&nbsp; &nbsp;之后 ip/laravel 后看到欢迎界面&nbsp; 安装成功<br/> <br/>&nbsp;&nbsp; &nbsp;laravel路由失效, 开启 apache的重写<br/>&nbsp;&nbsp; &nbsp;模块文件在 httpd中, 里面有多个配置文件<br/>&nbsp;&nbsp; &nbsp;修改httpd.conf&nbsp; 中的 AllowOverride All&nbsp; &nbsp; &nbsp;&nbsp; <br/> </p>
+            
+            
+            
+
+        </section>
+
+        <aside id="sidebar">
+            <blockquote class="route">关于我</blockquote>
+            <p>19本科毕业生，代码的搬运工，此界面灵感来自公众号【运维咖啡吧】</p>
+            
+            <blockquote class="route">Github地址</blockquote>
+            <a href="https://github.com/enjoy-binbin">
+                <img border="0" src="https://avatars2.githubusercontent.com/u/22811481" width="100%" height="100%" alt="enjoy-binbin"/>
+            </a>
+            
+            
+        </aside>
+    </div>
+</div>
+</body>
+
+</html>

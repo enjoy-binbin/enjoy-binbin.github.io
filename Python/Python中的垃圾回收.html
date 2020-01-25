@@ -1,0 +1,152 @@
+
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta name="theme-color" content="#2879d0"/>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1"/>
+    <meta name="copyright" content="©2020 测试所有"/>
+    <link rel="stylesheet" href="/css/style.min.css" media="screen" type="text/css"/>
+
+    <!-- Begin SEO tag -->
+    <title>Python中的垃圾回收</title>
+    <meta property="og:locale" content="zh_CN"/>
+    <meta property="og:type" content="article"/>
+    <meta property="og:title" content="Python中的垃圾回收"/>
+    <meta property="og:description" content="Python中的垃圾回收"/>
+    <meta property="og:url" content="#"/>
+    <meta property="og:site_name" content="Python中的垃圾回收"/>
+    <meta name="description" content="Python中的垃圾回收"/>
+    <!-- End SEO tag -->
+</head>
+
+<body>
+<header>
+    <div class="inner">
+        <a href="/">
+            <h1>彬彬同学丶</h1>
+        </a>
+        <h2>Choose what you love,love what you choose.</h2>
+    </div>
+</header>
+
+<div id="content-wrapper">
+    <div class="inner clearfix">
+        <section id="main-content">
+        
+            
+                <h1 id="art-title">Python中的垃圾回收</h1>
+            
+            
+            
+                <p>这里简单的记录下Python中的垃圾回收，引用计数，强弱引用的一些笔记。</p>
+<p><em>下面代码Base on Python3.6</em></p>
+<h4>del和垃圾回收</h4>
+<p>首先先说在CPython中，垃圾回收主要的算法是<strong>引用计数</strong>。实际上，每个对象都会统计有多少个引用指向自己。当引用计数归零时，对象立即就被销毁：CPython 会在对象上调用 <strong>del</strong> 方法（如果定义了），然后释放分配给对象的内存，也就完成了垃圾回收（GC、Garbage Collection）。有个<code>__del__</code>特殊方法，但是它不会销毁实例，是不应该在代码中调用的。即将销毁实例时，Python解释器会自己调用 <code>__del__</code> 方 法，给实例最后的机会，释放外部资源。在Ptyhon中，不像C那些语言，我们几乎很少会需要实现<code>__del__</code>。Python 没有直接销毁对象的机制，这一疏漏其实是一个好的特性： 如果随时可以销毁对象，那么指向对象的强引用怎么办?</p>
+<p><em>扩展阅读（PyPy, Garbage Collection, And A Deadlock）：<a href="https://emptysqua.re/blog/pypy-garbage-collection-and-a-deadlock/">https://emptysqua.re/blog/pypy-garbage-collection-and-a-deadlock/</a></em></p>
+<p>我们需要明白del语句是删除名称（引用），而不是背后的那个真实对象（这点在之前我一直都理解错了）。del 命令当然有可能会导致对象被当作垃圾回收，但是仅当删除的变量保存的是对象的最后一个引用，或者无法得到对象时。 重新绑定也可能会导致对象的引用数量归零，导致对象被销毁。这里的引用都是指的强引用，弱引用是不会算进计数里的。</p>
+<p><em>Else：CPython2.0 增加了分代垃圾回收算法，用于检测 引用循环中涉及的对象组——如果一组对象之间全是相互引用，即使再 出色的引用方式也会导致组中的对象不可获取。Python 的其他实现有更 复杂的垃圾回收程序，而且不依赖引用计数，这意味着，对象的引用数 量为零时可能不会立即调用 <code>__del__</code>方法。</em></p>
+<p>下面代码用<code>weakref.finalize</code>注册了一个回调函数，会在对象销毁的时候调用。这样就可以演示到引用计数到最后销毁的情形。</p>
+<pre><code>&gt;&gt;&gt; import weakref
+&gt;&gt;&gt; # set1和set2是两个别名, 都指向 {1, 2, 3}这个集合, 
+&gt;&gt;&gt; # 对于集合是可变类型, id(set1)和id(set2)是相等的
+&gt;&gt;&gt; set1 = {1, 2, 3}
+&gt;&gt;&gt; set2 = set1
+&gt;&gt;&gt;
+&gt;&gt;&gt; def bye():  # 定义了个回调函数, 只是简单的print
+...     print('say bye bye')
+... 
+&gt;&gt;&gt; 
+&gt;&gt;&gt; ender = weakref.finalize(set1, bye)  # 传入set1, 在引用的对象(就是那个集合)上注册回调函数
+&gt;&gt;&gt; ender.alive  # 在调用finalize对象之前, alive都是True的, 这里的finalize对象其实持有集合的弱引用
+True
+&gt;&gt;&gt;
+&gt;&gt;&gt; del set1  # del只是删除别名, 没有删除对象, {1, 2, 3}集合也还是存活的, 因为还有另外个set2引用着它
+&gt;&gt;&gt; ender.alive
+True
+&gt;&gt;&gt; 
+&gt;&gt;&gt; set2 = 'not longer point to {1, 2, 3}'  # 把最后个引用指向别的, 让{1, 2, 3}集合无法获取, 对象被销毁了, 调用了回调函数, 输出了print内容, 同时alive值变成False了
+say bye bye
+&gt;&gt;&gt; ender.alive
+False
+</code></pre>
+<p>弱引用</p>
+<p>正是因为有引用，对象才会在内存中存在。当对象的引用数量归零后，垃圾回收程序会把对象销毁。但是，有时需要引用对象，而不让对象存 在的时间超过所需时间。这经常用在缓存中。弱引用不会增加对象的引用数量。引用的目标对象称为所指对象 （referent）。因此我们说，弱引用不会妨碍所指对象被当作垃圾回收。弱引用在缓存应用中很有用，因为我们不想仅因为被缓存引用着而始终 保存缓存对象。（这里的意思是讲，缓存在某处，肯定会拿着那个对象的一个引用，如果是强引用，那个对象可能就一直无法被销毁回收，而如果是弱引用，就不会影响到垃圾回收。）</p>
+<p>例子是一个控制台会话，展示了如何使用<code>weakref.ref</code>实例获取所指对象。如果对象 存在，调用弱引用可以获取对象；否则返回 None。Python 控制台会自动把<code>_</code>变量 绑定到结果不为<code>None</code>的表达式结果上。这对我想演示的行为有影响，不过却凸显了一个实际问题：微观管理内存时，往往会得到意 外的结果，因为不明显的隐式赋值会为对象创建新引用。控制台中 的 _ 变量是一例。调用跟踪对象也常导致意料之外的引用。From Fluent Python</p>
+<p><em>官方文档：<a href="https://docs.python.org/3/library/weakref.html">https://docs.python.org/3/library/weakref.html</a></em></p>
+<pre><code>&gt;&gt;&gt; import weakref
+&gt;&gt;&gt; a_set = {0, 1}
+&gt;&gt;&gt;
+&gt;&gt;&gt; wref = weakref.ref(a_set)  # 产生一个弱引用对象
+&gt;&gt;&gt;
+&gt;&gt;&gt; wref
+&lt;weakref at 0x000001CBDC2ACCC8; to 'set' at 0x000001CBDCF00588&gt;
+&gt;&gt;&gt;
+&gt;&gt;&gt; wref()  # 直接调用可以获取到对象
+{0, 1}
+&gt;&gt;&gt; print(_)  # Python 控制台会自动把`_`变量 绑定到结果不为`None`的表达式结果上, 这里就多了个强引用
+{0, 1}
+&gt;&gt;&gt; a_set = {2, 3}  # 想让{0, 1}集合不可访问
+&gt;&gt;&gt; wref()  # 调用弱引用发现还是存在, 是引用{0, 1}集合还有个 `_`的强引用在前面
+{0, 1}
+&gt;&gt;&gt; wref() is None  # 表达式, 指出{0, 1}集合还在, 同时 `_`变量会取消绑定
+False
+&gt;&gt;&gt; print(_)  # 表达式结果为False, `_`变量被重新赋值了
+False
+&gt;&gt;&gt; wref() is None  # 集合{0, 1}已经为None了, 被回收了
+True
+&gt;&gt;&gt; print(_)
+True
+</code></pre>
+<p>WeakValueDictionary 类实现的是一种可变映射，里面的值是对象的 弱引用。被引用的对象在程序中的其他地方被当作垃圾回收后，对应的 键会自动从 WeakValueDictionary 中删除。因 此，WeakValueDictionary 经常用于缓存。例子来自fluent python。临时变量引用了对象，这可能会导致该变量的存在时间比预期长。通常，这对局部变量来说不是问题，因为它们在函数返回时会被销毁。但是在下面中，for 循环中的变量 cheese 是全局变量，除非显式删除，否则不会消失</p>
+<p><em>官方文档：<a href="https://docs.python.org/3/library/weakref.html?highlight=weakref#weakref.WeakKeyDictionary">https://docs.python.org/3/library/weakref.html?highlight=weakref#weakref.WeakKeyDictionary</a></em></p>
+<pre><code>class Cheese:
+    def __init__(self, kind):    
+        self.kind = kind
+
+    def __repr__(self):    
+        return 'Cheese(%r)' % self.kind
+
+import weakref
+stock = weakref.WeakValueDictionary()  # 实例化一个对象
+
+catalog = [Cheese('Red Leicester'), Cheese('Tilsit'), Cheese('Brie'), Cheese('Parmesan')]  # 强引用
+for cheese in catalog:
+    # 将cheese的种类名称映射到一个个cheese实例的弱引用上
+    stock[cheese.kind] = cheese
+
+
+print(sorted(stock.keys()))  # ['Brie', 'Parmesan', 'Red Leicester', 'Tilsit']
+
+del catalog 
+print(sorted(stock.keys()))  # ['Parmesan'], 删除强引用后为啥还剩下一个
+
+
+del cheese
+print(sorted(stock.keys()))  # [], 因为前面for循环, 会把最后一个Parmesan实例绑定在cheese变量上
+</code></pre>
+<p>需要注意：</p>
+<p>不是每个 Python 对象都可以作为弱引用的目标（或称所指对象）。基本 的 list 和 dict 实例不能作为所指对象，但是它们的子类却可以。继承list或者dict后的类的实例便可以作为弱引用的对象。但是，int 和 tuple 实例不能作为弱引用的目标，甚至它们的子类也不行。这些局限基本上是CPython的实现细节，这些局限是内部优化导致的结果看，在其他Python 解释器中情况可能不一样。</p>
+
+            
+            
+            
+
+        </section>
+
+        <aside id="sidebar">
+            <blockquote class="route">关于我</blockquote>
+            <p>19本科毕业生，代码的搬运工，此界面灵感来自公众号【运维咖啡吧】</p>
+            
+            <blockquote class="route">Github地址</blockquote>
+            <a href="https://github.com/enjoy-binbin">
+                <img border="0" src="https://avatars2.githubusercontent.com/u/22811481" width="100%" height="100%" alt="enjoy-binbin"/>
+            </a>
+            
+            
+        </aside>
+    </div>
+</div>
+</body>
+
+</html>

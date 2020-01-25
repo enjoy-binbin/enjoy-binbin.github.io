@@ -1,0 +1,71 @@
+
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta name="theme-color" content="#2879d0"/>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1"/>
+    <meta name="copyright" content="©2020 测试所有"/>
+    <link rel="stylesheet" href="/css/style.min.css" media="screen" type="text/css"/>
+
+    <!-- Begin SEO tag -->
+    <title>linux下部署git环境和git的使用</title>
+    <meta property="og:locale" content="zh_CN"/>
+    <meta property="og:type" content="article"/>
+    <meta property="og:title" content="linux下部署git环境和git的使用"/>
+    <meta property="og:description" content="linux下部署git环境和git的使用"/>
+    <meta property="og:url" content="#"/>
+    <meta property="og:site_name" content="linux下部署git环境和git的使用"/>
+    <meta name="description" content="linux下部署git环境和git的使用"/>
+    <!-- End SEO tag -->
+</head>
+
+<body>
+<header>
+    <div class="inner">
+        <a href="/">
+            <h1>彬彬同学丶</h1>
+        </a>
+        <h2>Choose what you love,love what you choose.</h2>
+    </div>
+</header>
+
+<div id="content-wrapper">
+    <div class="inner clearfix">
+        <section id="main-content">
+        
+            
+                <h1 id="art-title">linux下部署git环境和git的使用</h1>
+            
+            
+            
+                <p><span style="font-size: 16px;line-height: 27px"></span></p><p>linux下部署git环境,和git命令的使用, window版的就不介绍了(作者在本地win8,github,腾讯云linux)<br/> </p><p>系统: CentOs7.2 php环境 部署git环境</p><p><strong>yum直接安装git</strong></p><p style="padding: 9.5px;margin: 0 0 10px;font-size: 13px;color: #333;background-color: #f5f5f5;border: 1px solid #ccc;border-radius: 4px;">
+    yum install git</p><p><br/> </p><p><strong>设置username, email</strong></p><p style="padding: 9.5px;margin: 0 0 10px;font-size: 13px;color: #333;background-color: #f5f5f5;border: 1px solid #ccc;border-radius: 4px;">
+    git config --global user.name &quot;enjoy-binbin&quot;<br/>git config --global user.email &quot;binloveplay1314@qq.com&quot;</p><p><br/> </p><p><strong>克隆远程仓库到本地<br/> </strong></p><p style="padding: 9.5px;margin: 0 0 10px;font-size: 13px;color: #333;background-color: #f5f5f5;border: 1px solid #ccc;border-radius: 4px;">
+    git clone git@github.com:enjoy-binbin/blog<br/> </p><p><strong><br/> </strong></p><p><strong>到这里需要知道&nbsp; 工作区,暂存区,版本库这些概念了</strong></p><p><strong>工作区: 就是本地上 开发者的工作目录拉&nbsp; 当你git add -A 后,&nbsp;&nbsp;&nbsp; 就是将工作区的内容 add 进暂存区</strong></p><p><strong>暂存区</strong>: <strong>修改已被记录过的,&nbsp; 但是并没有录入版本库的区域 ,&nbsp; git commit -m &quot;&quot; 后,&nbsp; 进入版本库</strong></p><p><strong>版本库: 存储变化日志和版本信息</strong></p><p><strong>工作区 ---add&nbsp; ----&gt; 暂存区 ---commit ----&gt; 版本库&nbsp; --- push ----&gt; 远程仓库<br/> </strong></p><p><strong>最后,当 push 后, 会更新在 <strong>github</strong>远程仓库上的内容<br/> </strong></p><p><strong><br/> </strong></p><p><strong>所以一个标准的流程<br/> </strong></p><p style="padding: 9.5px;margin: 0 0 10px;font-size: 13px;color: #333;background-color: #f5f5f5;border: 1px solid #ccc;border-radius: 4px;">
+    git add -f&nbsp; . <br/>git commit -m &quot;更新内容&quot;<br/>git push</p><p><strong>以后更新本地仓库(也可以直接 git pull)</strong></p><p style="padding: 9.5px;margin: 0 0 10px;font-size: 13px;color: #333;background-color: #f5f5f5;border: 1px solid #ccc;border-radius: 4px;">
+    git remote -v<br/>git fetch origin master<br/>git merge</p><p>这里 origin 是本地分支&nbsp; master 是远程仓库分支名 <br/> </p><p>add 的时候使用 -f&nbsp;&nbsp; 强制将文件 add <br/> </p><p>merge是合并 两个 分支</p><p>&nbsp;&nbsp; <br/> </p><p><strong>总结一下git的常用命令<br/> </strong></p><p>git init&nbsp;&nbsp;&nbsp; // 初始化</p><p>git add -A&nbsp; //&nbsp; 参数: -f 强制&nbsp;&nbsp; -A 所有&nbsp;&nbsp;&nbsp; .&nbsp; 所有<br/> </p><p>git commit -m &quot;更新日志..&quot;&nbsp; // 提交commit<br/> </p><p>git push // push到远程仓库</p><p>git pull&nbsp;&nbsp; // pull到本地仓库<br/> </p><p>git reflog // 查看所有日志吧? git log<br/> </p><p>git log --pretty=oneline // 一行行查看日志 (版本号, commit信息)</p><p>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;HEAD 相当于 C的指针&nbsp; 一般指向当前最新的<br/>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;向HEAD 往后走5个版本<br/>git reset // &nbsp; git reset --hard HEAD^^^^^&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; git reset --hard 版本号<br/> </p><p>分支:<br/>git branch&nbsp; // &nbsp;查看所有分支<br/>git branch Name // 创建分支<br/>git checkout Name // 切换分支</p><p>git merge Name // 合并分支</p><p>git branch -d Name //&nbsp; 删除分支</p><p>一个例子:&nbsp; (先新建一个test分支, 在此分支上修改代码, 可行后, 切换master主分支 , 合并test分支)<br/>&nbsp;&nbsp; &nbsp;git branch test<br/>&nbsp;&nbsp; &nbsp;git checkout test</p><p>&nbsp;&nbsp;&nbsp; .....这里进行了很多代码修改代码实现</p><p>&nbsp;&nbsp;&nbsp; git add -A<br/>&nbsp;&nbsp; &nbsp;git commit -m &quot;test分支操作完成&quot;</p><p>&nbsp;&nbsp;&nbsp; git checkout master<br/>&nbsp;&nbsp; &nbsp;git merge test</p><p>&nbsp;分支的出现, 可以防止 污染 master主分支, 建议以后单操作, 建立一个新分支来操作最后再合并</p><p><br/> </p><p>远程仓库:<br/>git remote // 查看远程仓库<br/>git remote -v&nbsp; // 查看远程仓库地址 ,&nbsp; 出现中的&nbsp; origin&nbsp; 是默认本地仓库别名</p><p>git remote remove Name //&nbsp;删除仓库<br/>git remote add NickName https地址或者shh地址 // 为远程仓库添加一个别名&nbsp;&nbsp;&nbsp; <br/> </p><p>添加远程库<br/>&nbsp;&nbsp; &nbsp;git remote add myblog https://...<br/>&nbsp;&nbsp; &nbsp;git remote add myblog git@github.com:enjoy-binbin/blog.git<br/>push远程仓库时候, https是需要输入github账号密码的, ssh则不用</p><p>git push myblog master // 将本地myblog仓库push到远程master仓库</p><p><br/> </p><p>git stash: 备份当前的工作区的内容，从最近的一次提交中读取相关内容，让工作区保证和上次提交的内容一致。同时，将当前的工作区内容保存到Git栈中。<br/>git stash pop: 从Git栈中读取最近一次保存的内容，恢复工作区的相关内容。由于可能存在多个Stash的内容，所以用栈来管理，pop会从最近的一个stash中读取内容并恢复。<br/>git stash list: 显示Git栈内的所有备份，可以利用这个列表来决定从那个地方恢复。<br/>git stash clear: 清空Git栈。此时使用gitg等图形化工具会发现，原来stash的哪些节点都消失了。</p><p><br/> </p><p><strong><br/> </strong></p><p><strong>最后配置 shh 密钥公钥 , 免密登陆</strong><br/> </p><p style="padding: 9.5px;margin: 0 0 10px;font-size: 13px;color: #333;background-color: #f5f5f5;border: 1px solid #ccc;border-radius: 4px;">
+    ssh-keygen -t rsa -C &quot;binloveplay1314@qq.com&quot;</p><p>这时会生成一个 ssh-key&nbsp; 一路默认回车<br/>最后生成密钥文件 默认放在&nbsp; /root/.ssh/id_rsa.pub<br/> <br/>cat打开,将里面的内容复制 <br/> <br/>进入github官网,登陆账号,打开设置<br/>左侧栏会有个 SSH and GPG keys <br/>New SSH key<br/>Title&nbsp; 标题<br/>Key&nbsp;&nbsp; 将复制的内容复制进去<br/> <br/>Add SSH key<br/>输入github密码 确认即可</p><p><strong>上述步骤完成后, linux终端下输入</strong></p><p style="padding: 9.5px;margin: 0 0 10px;font-size: 13px;color: #333;background-color: #f5f5f5;border: 1px solid #ccc;border-radius: 4px;">
+    ssh -T git@github.com</p><p>出现 Hi enjoy-binbin! You&#39;ve successfully authenticated, but GitHub does not provide shell access.<br/> <br/>即成功, 有时候反应会迟钝, 确认步骤无误后, 可以等待几分钟后在试</p><p><br/> </p><p>写的好乱~~~ 也是本渣在本地上记的 散乱笔记 , 发现想要串起来也很麻烦 , 就这样了吧&nbsp; ~~<br/> </p><p>&nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;&nbsp; <br/> </p>
+            
+            
+            
+
+        </section>
+
+        <aside id="sidebar">
+            <blockquote class="route">关于我</blockquote>
+            <p>19本科毕业生，代码的搬运工，此界面灵感来自公众号【运维咖啡吧】</p>
+            
+            <blockquote class="route">Github地址</blockquote>
+            <a href="https://github.com/enjoy-binbin">
+                <img border="0" src="https://avatars2.githubusercontent.com/u/22811481" width="100%" height="100%" alt="enjoy-binbin"/>
+            </a>
+            
+            
+        </aside>
+    </div>
+</div>
+</body>
+
+</html>

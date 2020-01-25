@@ -1,0 +1,160 @@
+
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta name="theme-color" content="#2879d0"/>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1"/>
+    <meta name="copyright" content="©2020 测试所有"/>
+    <link rel="stylesheet" href="/css/style.min.css" media="screen" type="text/css"/>
+
+    <!-- Begin SEO tag -->
+    <title>django-haystack全文搜索</title>
+    <meta property="og:locale" content="zh_CN"/>
+    <meta property="og:type" content="article"/>
+    <meta property="og:title" content="django-haystack全文搜索"/>
+    <meta property="og:description" content="django-haystack全文搜索"/>
+    <meta property="og:url" content="#"/>
+    <meta property="og:site_name" content="django-haystack全文搜索"/>
+    <meta name="description" content="django-haystack全文搜索"/>
+    <!-- End SEO tag -->
+</head>
+
+<body>
+<header>
+    <div class="inner">
+        <a href="/">
+            <h1>彬彬同学丶</h1>
+        </a>
+        <h2>Choose what you love,love what you choose.</h2>
+    </div>
+</header>
+
+<div id="content-wrapper">
+    <div class="inner clearfix">
+        <section id="main-content">
+        
+            
+                <h1 id="art-title">django-haystack全文搜索</h1>
+            
+            
+            
+                <h3>使用django-haystack进行全局文章搜索</h3>
+<div class="highlight"><pre><span></span><span class="n">pip</span> <span class="n">install</span> <span class="n">django</span><span class="o">-</span><span class="n">haystack</span><span class="o">==</span><span class="mf">2.8</span><span class="o">.</span><span class="mi">1</span>
+</pre></div>
+<h3>githu地址和文档地址</h3>
+<p>​   <a href="https://github.com/django-haystack/django-haystack">https://github.com/django-haystack/django-haystack</a></p>
+<p>​   <a href="https://django-haystack.readthedocs.io/en/v2.4.1/tutorial.html">https://django-haystack.readthedocs.io/en/v2.4.1/tutorial.html</a></p>
+<h3>安装搜索引擎</h3>
+<p>文档:<a href="https://django-haystack.readthedocs.io/en/v2.4.1/installing_search_engines.html">https://django-haystack.readthedocs.io/en/v2.4.1/installing_search_engines.html</a></p>
+<p>这里选择 Whoosh，Tolearn: Elasticsearch</p>
+<p><code>pip install whoosh==2.7.4</code></p>
+<h3>这里注意 :</h3>
+<p>haystack只对在安装完毕后，重新添加的有效，之前创建的数据是没有建立索引无法搜索出来的(测试了好久/捂脸)</p>
+<h3>添加jieba作为中文分词</h3>
+<p>pip install jieba==0.39</p>
+<p>复制一份 haystack.backends.whoosh_backend.py出来到utils目录下 <code>个人设置</code></p>
+<div class="highlight"><pre><span></span><span class="c1"># 修改其源代码</span>
+<span class="kn">from</span> <span class="nn">jieba.analyse</span> <span class="kn">import</span> <span class="n">ChineseAnalyzer</span>
+<span class="o">......</span>
+<span class="o">......</span>
+<span class="c1"># 找到build_schema这个函数的</span>
+<span class="n">schema_fields</span><span class="p">[</span><span class="n">field_class</span><span class="o">.</span><span class="n">index_fieldname</span><span class="p">]</span> <span class="o">=</span> <span class="n">TEXT</span><span class="p">(</span><span class="n">stored</span><span class="o">=</span><span class="bp">True</span><span class="p">,</span> <span class="n">analyzer</span><span class="o">=</span><span class="n">StemmingAnalyzer</span><span class="p">()</span>
+<span class="c1"># 将StemmingAnalyzer替换为jieba的ChineseAnalyzer</span>
+<span class="n">schema_fields</span><span class="p">[</span><span class="n">field_class</span><span class="o">.</span><span class="n">index_fieldname</span><span class="p">]</span> <span class="o">=</span> <span class="n">TEXT</span><span class="p">(</span><span class="n">stored</span><span class="o">=</span><span class="bp">True</span><span class="p">,</span> <span class="n">analyzer</span><span class="o">=</span><span class="n">ChineseAnalyzer</span><span class="p">()</span>
+</pre></div>
+<p>添加 haystack 到 <code>INSTALLED_APPS</code></p>
+<p>settings里设置引擎:</p>
+<div class="highlight"><pre><span></span><span class="n">HAYSTACK_CONNECTIONS</span> <span class="o">=</span> <span class="p">{</span>
+    <span class="s1">&#39;default&#39;</span><span class="p">:</span> <span class="p">{</span>
+        <span class="s1">&#39;ENGINE&#39;</span><span class="p">:</span> <span class="s1">&#39;haystack.backends.whoosh_backend.WhooshEngine&#39;</span><span class="p">,</span>
+        <span class="s1">&#39;PATH&#39;</span><span class="p">:</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">dirname</span><span class="p">(</span><span class="vm">__file__</span><span class="p">),</span> <span class="s1">&#39;whoosh_index&#39;</span><span class="p">),</span>
+    <span class="p">},</span>
+<span class="p">}</span>
+</pre></div>
+<p>在blog目录下创建 search_indexes.py(看文档)</p>
+<div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">haystack</span> <span class="kn">import</span> <span class="n">indexes</span>
+<span class="kn">from</span> <span class="nn">.models</span> <span class="kn">import</span> <span class="n">Article</span>
+
+
+<span class="k">class</span> <span class="nc">ArticleIndex</span><span class="p">(</span><span class="n">indexes</span><span class="o">.</span><span class="n">SearchIndex</span><span class="p">,</span> <span class="n">indexes</span><span class="o">.</span><span class="n">Indexable</span><span class="p">):</span>
+    <span class="n">text</span> <span class="o">=</span> <span class="n">indexes</span><span class="o">.</span><span class="n">CharField</span><span class="p">(</span><span class="n">document</span><span class="o">=</span><span class="bp">True</span><span class="p">,</span> <span class="n">use_template</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">get_model</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">Article</span>
+</pre></div>
+<p>url设置</p>
+<p><code>path('search', include('haystack.urls'))</code></p>
+<p>模板文件:</p>
+<p><code>search/indexes/myapp/aitilce_text.txt</code></p>
+<pre><code>{{ object.title }}
+{{ object.author.username }}
+{{ object.content }}
+</code></pre>
+<p>模板文件 search.html</p>
+<div class="highlight"><pre><span></span>{% extends &#39;base.html&#39; %}
+
+{% block content %}
+    <span class="p">&lt;</span><span class="nt">h2</span><span class="p">&gt;</span>Search<span class="p">&lt;/</span><span class="nt">h2</span><span class="p">&gt;</span>
+
+    <span class="p">&lt;</span><span class="nt">form</span> <span class="na">method</span><span class="o">=</span><span class="s">&quot;get&quot;</span> <span class="na">action</span><span class="o">=</span><span class="s">&quot;.&quot;</span><span class="p">&gt;</span>
+        <span class="p">&lt;</span><span class="nt">table</span><span class="p">&gt;</span>
+            {{ form.as_table }}
+            <span class="p">&lt;</span><span class="nt">tr</span><span class="p">&gt;</span>
+                <span class="p">&lt;</span><span class="nt">td</span><span class="p">&gt;</span><span class="ni">&amp;nbsp;</span><span class="p">&lt;/</span><span class="nt">td</span><span class="p">&gt;</span>
+                <span class="p">&lt;</span><span class="nt">td</span><span class="p">&gt;</span>
+                    <span class="p">&lt;</span><span class="nt">input</span> <span class="na">type</span><span class="o">=</span><span class="s">&quot;submit&quot;</span> <span class="na">value</span><span class="o">=</span><span class="s">&quot;Search&quot;</span><span class="p">&gt;</span>
+                <span class="p">&lt;/</span><span class="nt">td</span><span class="p">&gt;</span>
+            <span class="p">&lt;/</span><span class="nt">tr</span><span class="p">&gt;</span>
+        <span class="p">&lt;/</span><span class="nt">table</span><span class="p">&gt;</span>
+
+        {% if query %}
+            <span class="p">&lt;</span><span class="nt">h3</span><span class="p">&gt;</span>Results<span class="p">&lt;/</span><span class="nt">h3</span><span class="p">&gt;</span>
+
+            {% for result in page.object_list %}
+                <span class="p">&lt;</span><span class="nt">p</span><span class="p">&gt;</span>
+                    <span class="p">&lt;</span><span class="nt">a</span> <span class="na">href</span><span class="o">=</span><span class="s">&quot;{{ result.object.get_absolute_url }}&quot;</span><span class="p">&gt;</span>{{ result.object.title }}<span class="p">&lt;/</span><span class="nt">a</span><span class="p">&gt;</span>
+                <span class="p">&lt;/</span><span class="nt">p</span><span class="p">&gt;</span>
+            {% empty %}
+                <span class="p">&lt;</span><span class="nt">p</span><span class="p">&gt;</span>No results found.<span class="p">&lt;/</span><span class="nt">p</span><span class="p">&gt;</span>
+            {% endfor %}
+
+            {% if page.has_previous or page.has_next %}
+                <span class="p">&lt;</span><span class="nt">div</span><span class="p">&gt;</span>
+                    {% if page.has_previous %}<span class="p">&lt;</span><span class="nt">a</span> <span class="na">href</span><span class="o">=</span><span class="s">&quot;?q={{ query }}&amp;amp;page={{ page.previous_page_number }}&quot;</span><span class="p">&gt;</span>{% endif %}<span class="ni">&amp;laquo;</span> Previous{% if page.has_previous %}<span class="p">&lt;/</span><span class="nt">a</span><span class="p">&gt;</span>{% endif %}
+                    |
+                    {% if page.has_next %}<span class="p">&lt;</span><span class="nt">a</span> <span class="na">href</span><span class="o">=</span><span class="s">&quot;?q={{ query }}&amp;amp;page={{ page.next_page_number }}&quot;</span><span class="p">&gt;</span>{% endif %}Next <span class="ni">&amp;raquo;</span>{% if page.has_next %}<span class="p">&lt;/</span><span class="nt">a</span><span class="p">&gt;</span>{% endif %}
+                <span class="p">&lt;/</span><span class="nt">div</span><span class="p">&gt;</span>
+            {% endif %}
+        {% else %}
+            {# Show some example queries to run, maybe query syntax, something else? #}
+        {% endif %}
+    <span class="p">&lt;/</span><span class="nt">form</span><span class="p">&gt;</span>
+{% endblock %}
+</pre></div>
+<h3>问题</h3>
+<p>他的分页，可以自己重写SearchView来进行分页的实现</p>
+<p>参考: <a href="https://blog.csdn.net/caca95/article/details/84893990">https://blog.csdn.net/caca95/article/details/84893990</a></p>
+
+            
+            
+            
+
+        </section>
+
+        <aside id="sidebar">
+            <blockquote class="route">关于我</blockquote>
+            <p>19本科毕业生，代码的搬运工，此界面灵感来自公众号【运维咖啡吧】</p>
+            
+            <blockquote class="route">Github地址</blockquote>
+            <a href="https://github.com/enjoy-binbin">
+                <img border="0" src="https://avatars2.githubusercontent.com/u/22811481" width="100%" height="100%" alt="enjoy-binbin"/>
+            </a>
+            
+            
+        </aside>
+    </div>
+</div>
+</body>
+
+</html>
