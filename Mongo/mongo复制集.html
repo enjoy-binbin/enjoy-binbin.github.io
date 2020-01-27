@@ -1,0 +1,195 @@
+
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1"/>
+    <meta name="copyright" content="©2020 Binblog所有"/>
+    <link rel="stylesheet" href="/static/style.min.css" media="screen" type="text/css"/>
+
+    <!-- Begin SEO tag -->
+    <title>mongo复制集</title>
+    <meta property="og:locale" content="zh_CN"/>
+    <meta property="og:type" content="article"/>
+    <meta property="og:title" content="mongo复制集"/>
+    <meta property="og:description" content="mongo复制集"/>
+    <meta property="og:site_name" content="mongo复制集"/>
+    <meta name="description" content="mongo复制集"/>
+    <!-- End SEO tag -->
+</head>
+
+<body>
+<header>
+    <div class="inner">
+        <a href="/">
+            <h1>彬彬同学丶</h1>
+        </a>
+        <h2>Choose what you love. Love what you choose.</h2>
+    </div>
+</header>
+
+<div id="content-wrapper">
+    <div class="inner clearfix">
+        <section id="main-content">
+        
+            
+                <h1 id="art-title">mongo复制集</h1>
+            
+            
+            
+                <p><em>下面实验基于mongo4.2.2, Mac10.14.6</em></p>
+<p>题外话：以前尝试过MySQL的binlog的一些复制搭建，mongo的复制集搭建对比MySQL，就简单了好多emmm，后面有空得再去温习一下MySQL的主备那些搭建，都忘记啦</p>
+<p><strong>复制的作用:</strong></p>
+<p>当然第一还是为了保证数据的高可用性（故障转移），其次后面就是会有保障数据的安全性，分布式读取数据提升读性能，容灾，无需停机维护（如备份、重建索引等）等一系列好处。</p>
+<p><strong>复制的原理:</strong></p>
+<p>复制至少需要两个节点，其中一个是主节点，生产上为了选举，应该都是要求至少有三个节点吧</p>
+<p>常见的搭配方式：一主一从、一主多从</p>
+<p>主节点记录在其上的所有操作oplog（是local库下的一个固定集合），Secondary就是通过查看Primary 的oplog这个集合来进行复制的。</p>
+<h3>搭建mongo复制集</h3>
+<p>我需要再一台机器上运行三个进程，所以需要为它们分别配置。</p>
+<ol>
+<li>不同的服务端口 28017/28018/28019</li>
+<li>不同的数据目录 /data/db{1,2,3}</li>
+<li>不同的日志文件 /data/db{1,2,3}/mongod.log</li>
+</ol>
+<p><strong>首先需要创建三个数据目录</strong></p>
+<div class="highlight"><pre><span></span>mkdir -p /data/db<span class="o">{</span><span class="m">1</span>,2,3<span class="o">}</span>
+</pre></div>
+<p><strong>然后准备三个配置文件</strong></p>
+<div class="highlight"><pre><span></span><span class="err">#</span> <span class="err">/data/db</span><span class="mi">1</span><span class="err">/mongod.conf</span>
+<span class="err">systemLog:</span>
+  <span class="err">destination:</span> <span class="err">file</span>
+  <span class="err">path:</span> <span class="err">/data/db</span><span class="mi">1</span><span class="err">/mongod.log</span>  <span class="err">#</span> <span class="err">log</span> <span class="err">path需要替换</span>
+  <span class="err">logAppend:</span> <span class="kc">true</span>
+<span class="err">storage:</span>
+  <span class="err">dbPath:</span> <span class="err">/data/db</span><span class="mi">1</span>  <span class="err">#</span> <span class="err">数据目录需要替换</span>
+<span class="err">net:</span>
+  <span class="err">bindIp:</span> <span class="mf">0.0</span><span class="err">.</span><span class="mf">0.0</span>
+  <span class="err">port:</span> <span class="mi">28017</span>  <span class="err">#</span> <span class="err">端口号需要替换</span>
+<span class="err">replication:</span>
+  <span class="err">replSetName:</span> <span class="err">rs</span><span class="mi">0</span>  <span class="err">#</span> <span class="err">rs</span><span class="mi">0</span><span class="err">复制集名称</span>
+<span class="err">processManagement:</span>
+  <span class="err">fork:</span> <span class="kc">true</span>
+</pre></div>
+<p><strong>启动服务，这里需要注意权限相关</strong></p>
+<p>如果是在window中，由于不支持fork，所以需要打开三个不同的黑窗口执行命令，启动三个服务，哪个作为主节点都是一样的。</p>
+<p><em>sudo mongod -f /data/db1/mongod.conf</em></p>
+<p><strong>配置复制集的简单方法</strong></p>
+<div class="highlight"><pre><span></span><span class="err">#</span> <span class="err">连接端口号</span><span class="mi">28017</span><span class="err">的mongo</span>
+<span class="err">#</span> <span class="err">此方法需要hostname能被解析，输入hostname</span> <span class="err">-f</span> <span class="err">如果有输出即可，使用输出作为HOSTNAME</span>
+<span class="err">#</span> <span class="err">使用rs.add()添加复制集成员，只有主节点可以添加，可以通过db.isMaster()命令查看</span>
+<span class="err">#</span> <span class="err">mongo</span> <span class="err">--port</span> <span class="mi">28017</span>
+<span class="err">rs.initiate()</span>
+<span class="err">rs.add(</span><span class="s2">&quot;HOSTNAME:28018&quot;</span><span class="err">)</span>
+<span class="err">rs.add(</span><span class="s2">&quot;HOSTNAME:28019&quot;</span><span class="err">)</span>
+<span class="err">rs.conf()</span>
+</pre></div>
+<p><strong>进入mongo后的输出：</strong></p>
+<p>可以看到在initiate之前的提示符只有&gt;，之后就进入了复制集rs0，然后先是SECONDARY，然后马上就又变成了PRIMARY。之后可以使用rs.status()查看到一些信息，比如说members信息等，刚开始是只有一个节点的，在之后我们使用add添加后，可以再看status()的相关信息。</p>
+<div class="highlight"><pre><span></span><span class="err">mongo</span> <span class="err">--port</span> <span class="mi">28018</span>
+<span class="err">&gt;</span> <span class="err">rs.initiate()</span>
+<span class="p">{</span>
+    <span class="nt">&quot;info2&quot;</span> <span class="p">:</span> <span class="s2">&quot;no configuration specified. Using a default configuration for the set&quot;</span><span class="p">,</span>
+    <span class="nt">&quot;me&quot;</span> <span class="p">:</span> <span class="s2">&quot;HansomedeMacBook-Pro.local:28018&quot;</span><span class="p">,</span>
+    <span class="nt">&quot;ok&quot;</span> <span class="p">:</span> <span class="mi">1</span><span class="p">,</span>
+    <span class="nt">&quot;$clusterTime&quot;</span> <span class="p">:</span> <span class="p">{</span>
+        <span class="nt">&quot;clusterTime&quot;</span> <span class="p">:</span> <span class="err">Timestamp(</span><span class="mi">1580113743</span><span class="p">,</span> <span class="err">1),</span>
+        <span class="nt">&quot;signature&quot;</span> <span class="p">:</span> <span class="p">{</span>
+            <span class="nt">&quot;hash&quot;</span> <span class="p">:</span> <span class="err">BinData(</span><span class="mi">0</span><span class="p">,</span><span class="nt">&quot;AAAAAAAAAAAAAAAAAAAAAAAAAAA=&quot;</span><span class="err">)</span><span class="p">,</span>
+            <span class="nt">&quot;keyId&quot;</span> <span class="p">:</span> <span class="err">NumberLong(</span><span class="mi">0</span><span class="err">)</span>
+        <span class="p">}</span>
+    <span class="p">},</span>
+    <span class="nt">&quot;operationTime&quot;</span> <span class="p">:</span> <span class="err">Timestamp(</span><span class="mi">1580113743</span><span class="p">,</span> <span class="err">1)</span>
+<span class="p">}</span>
+<span class="err">rs</span><span class="mi">0</span><span class="err">:SECONDARY&gt;</span>
+<span class="err">rs</span><span class="mi">0</span><span class="err">:PRIMARY&gt;</span>
+<span class="err">rs</span><span class="mi">0</span><span class="err">:PRIMARY&gt;</span> <span class="err">rs.status()</span>
+<span class="err">rs</span><span class="mi">0</span><span class="err">:PRIMARY&gt;</span>
+<span class="err">rs</span><span class="mi">0</span><span class="err">:PRIMARY&gt;</span> <span class="err">rs.add(</span><span class="s2">&quot;HansomedeMacBook-Pro.local:28017&quot;</span><span class="err">)</span>
+<span class="p">{</span>
+    <span class="nt">&quot;ok&quot;</span> <span class="p">:</span> <span class="mi">1</span><span class="p">,</span>
+    <span class="nt">&quot;$clusterTime&quot;</span> <span class="p">:</span> <span class="p">{</span>
+        <span class="nt">&quot;clusterTime&quot;</span> <span class="p">:</span> <span class="err">Timestamp(</span><span class="mi">1580114152</span><span class="p">,</span> <span class="err">1),</span>
+        <span class="nt">&quot;signature&quot;</span> <span class="p">:</span> <span class="p">{</span>
+            <span class="nt">&quot;hash&quot;</span> <span class="p">:</span> <span class="err">BinData(</span><span class="mi">0</span><span class="p">,</span><span class="nt">&quot;AAAAAAAAAAAAAAAAAAAAAAAAAAA=&quot;</span><span class="err">)</span><span class="p">,</span>
+            <span class="nt">&quot;keyId&quot;</span> <span class="p">:</span> <span class="err">NumberLong(</span><span class="mi">0</span><span class="err">)</span>
+        <span class="p">}</span>
+    <span class="p">},</span>
+    <span class="nt">&quot;operationTime&quot;</span> <span class="p">:</span> <span class="err">Timestamp(</span><span class="mi">1580114152</span><span class="p">,</span> <span class="err">1)</span>
+<span class="p">}</span>
+<span class="err">rs</span><span class="mi">0</span><span class="err">:PRIMARY&gt;</span> <span class="err">rs.add(</span><span class="s2">&quot;HansomedeMacBook-Pro.local:28019&quot;</span><span class="err">)</span>
+<span class="p">{</span>
+    <span class="nt">&quot;ok&quot;</span> <span class="p">:</span> <span class="mi">1</span><span class="p">,</span>
+    <span class="nt">&quot;$clusterTime&quot;</span> <span class="p">:</span> <span class="p">{</span>
+        <span class="nt">&quot;clusterTime&quot;</span> <span class="p">:</span> <span class="err">Timestamp(</span><span class="mi">1580114157</span><span class="p">,</span> <span class="err">1),</span>
+        <span class="nt">&quot;signature&quot;</span> <span class="p">:</span> <span class="p">{</span>
+            <span class="nt">&quot;hash&quot;</span> <span class="p">:</span> <span class="err">BinData(</span><span class="mi">0</span><span class="p">,</span><span class="nt">&quot;AAAAAAAAAAAAAAAAAAAAAAAAAAA=&quot;</span><span class="err">)</span><span class="p">,</span>
+            <span class="nt">&quot;keyId&quot;</span> <span class="p">:</span> <span class="err">NumberLong(</span><span class="mi">0</span><span class="err">)</span>
+        <span class="p">}</span>
+    <span class="p">},</span>
+    <span class="nt">&quot;operationTime&quot;</span> <span class="p">:</span> <span class="err">Timestamp(</span><span class="mi">1580114157</span><span class="p">,</span> <span class="err">1)</span>
+<span class="p">}</span>
+<span class="err">rs</span><span class="mi">0</span><span class="err">:PRIMARY&gt;</span> <span class="err">rs.status()</span>
+</pre></div>
+<p><strong>验证复制</strong></p>
+<p>进入了其中一个slave节点，先尝试读，会发现报错。因为默认不是主节点 或者 slaveOk=false设置不给读。之后只需要用rs.slaveOk()设置即可。test集合中并没有数据，我们去主节点上插入一些数据</p>
+<div class="highlight"><pre><span></span><span class="err">mongo</span> <span class="err">--port</span> <span class="mi">28017</span>
+
+<span class="err">rs</span><span class="mi">0</span><span class="err">:SECONDARY&gt;</span> <span class="err">db.test.find()</span>
+<span class="err">Error:</span> <span class="err">error:</span> <span class="p">{</span>
+    <span class="nt">&quot;operationTime&quot;</span> <span class="p">:</span> <span class="err">Timestamp(</span><span class="mi">1580114324</span><span class="p">,</span> <span class="err">1),</span>
+    <span class="nt">&quot;ok&quot;</span> <span class="p">:</span> <span class="mi">0</span><span class="p">,</span>
+    <span class="nt">&quot;errmsg&quot;</span> <span class="p">:</span> <span class="s2">&quot;not master and slaveOk=false&quot;</span><span class="p">,</span>
+    <span class="nt">&quot;code&quot;</span> <span class="p">:</span> <span class="mi">13435</span><span class="p">,</span>
+    <span class="nt">&quot;codeName&quot;</span> <span class="p">:</span> <span class="s2">&quot;NotMasterNoSlaveOk&quot;</span><span class="p">,</span>
+    <span class="nt">&quot;$clusterTime&quot;</span> <span class="p">:</span> <span class="p">{</span>
+        <span class="nt">&quot;clusterTime&quot;</span> <span class="p">:</span> <span class="err">Timestamp(</span><span class="mi">1580114324</span><span class="p">,</span> <span class="err">1),</span>
+        <span class="nt">&quot;signature&quot;</span> <span class="p">:</span> <span class="p">{</span>
+            <span class="nt">&quot;hash&quot;</span> <span class="p">:</span> <span class="err">BinData(</span><span class="mi">0</span><span class="p">,</span><span class="nt">&quot;AAAAAAAAAAAAAAAAAAAAAAAAAAA=&quot;</span><span class="err">)</span><span class="p">,</span>
+            <span class="nt">&quot;keyId&quot;</span> <span class="p">:</span> <span class="err">NumberLong(</span><span class="mi">0</span><span class="err">)</span>
+        <span class="p">}</span>
+    <span class="p">}</span>
+<span class="p">}</span>
+<span class="err">rs</span><span class="mi">0</span><span class="err">:SECONDARY&gt;</span> <span class="err">rs.slaveOk()</span>
+<span class="err">rs</span><span class="mi">0</span><span class="err">:SECONDARY&gt;</span> <span class="err">db.test.find()</span>
+<span class="err">rs</span><span class="mi">0</span><span class="err">:SECONDARY&gt;</span>
+
+<span class="err">###</span> <span class="err">这里需要注意是切换到了主节点上了,</span> <span class="err">插入了一个文档</span>
+<span class="err">rs</span><span class="mi">0</span><span class="err">:PRIMARY&gt;</span> <span class="err">db.test.insert(</span><span class="p">{</span><span class="err">name:</span> <span class="nt">&quot;binbin&quot;</span><span class="p">,</span> <span class="err">age:</span> <span class="nt">&quot;22&quot;</span><span class="p">}</span><span class="err">)</span>
+<span class="err">WriteResult(</span><span class="p">{</span> <span class="nt">&quot;nInserted&quot;</span> <span class="p">:</span> <span class="mi">1</span> <span class="p">}</span><span class="err">)</span>
+<span class="err">rs</span><span class="mi">0</span><span class="err">:PRIMARY&gt;</span> <span class="err">db.test.findOne()</span>
+<span class="p">{</span>
+    <span class="nt">&quot;_id&quot;</span> <span class="p">:</span> <span class="err">ObjectId(</span><span class="s2">&quot;5e2ea2776a9238685d01f306&quot;</span><span class="err">)</span><span class="p">,</span>
+    <span class="nt">&quot;name&quot;</span> <span class="p">:</span> <span class="s2">&quot;binbin&quot;</span><span class="p">,</span>
+    <span class="nt">&quot;age&quot;</span> <span class="p">:</span> <span class="s2">&quot;22&quot;</span>
+<span class="p">}</span>
+<span class="err">rs</span><span class="mi">0</span><span class="err">:PRIMARY&gt;</span>
+
+<span class="err">###</span> <span class="err">回到从节点，查找数据，发现数据已经被复制过来了，延迟会根据网络因素波动，局域网应该是毫秒级别</span>
+<span class="err">rs</span><span class="mi">0</span><span class="err">:SECONDARY&gt;</span> <span class="err">db.test.find()</span>
+<span class="p">{</span> <span class="nt">&quot;_id&quot;</span> <span class="p">:</span> <span class="err">ObjectId(</span><span class="s2">&quot;5e2ea2776a9238685d01f306&quot;</span><span class="err">)</span><span class="p">,</span> <span class="nt">&quot;name&quot;</span> <span class="p">:</span> <span class="s2">&quot;binbin&quot;</span><span class="p">,</span> <span class="nt">&quot;age&quot;</span> <span class="p">:</span> <span class="s2">&quot;22&quot;</span> <span class="p">}</span>
+<span class="err">rs</span><span class="mi">0</span><span class="err">:SECONDARY&gt;</span>
+</pre></div>
+
+            
+            
+            
+
+        </section>
+
+        <aside id="sidebar">
+            <blockquote class="route">关于我</blockquote>
+            <p>19本科毕业生，代码的搬运工。由于水平有限，笔记不全然是正确的，有问题欢迎交流~</p>
+            
+            <blockquote class="route">Github地址</blockquote>
+            <a href="https://github.com/enjoy-binbin">
+                <img border="0" src="https://avatars2.githubusercontent.com/u/22811481" width="100%" height="100%" alt="enjoy-binbin"/>
+            </a>
+            
+            
+        </aside>
+    </div>
+</div>
+</body>
+
+</html>
