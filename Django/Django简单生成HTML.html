@@ -1,0 +1,224 @@
+
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1"/>
+    <meta name="copyright" content="©2020 Binblog所有"/>
+    <link rel="stylesheet" href="/static/style.min.css" media="screen" type="text/css"/>
+
+    <!-- Begin SEO tag -->
+    <title>Django简单生成HTML</title>
+    <meta property="og:locale" content="zh_CN"/>
+    <meta property="og:type" content="article"/>
+    <meta property="og:title" content="Django简单生成HTML"/>
+    <meta property="og:description" content="Django简单生成HTML"/>
+    <meta property="og:site_name" content="Django简单生成HTML"/>
+    <meta name="description" content="Django简单生成HTML"/>
+    <!-- End SEO tag -->
+</head>
+
+<body>
+<header>
+    <div class="inner">
+        <a href="/">
+            <h1>彬彬同学丶</h1>
+        </a>
+        <h2>Choose what you love. Love what you choose.</h2>
+    </div>
+</header>
+
+<div id="content-wrapper">
+    <div class="inner clearfix">
+        <section id="main-content">
+        
+            
+                <h1 id="art-title">Django简单生成HTML</h1>
+            
+            
+            
+                <h4>说在前面</h4>
+<p>老实说我折腾过好多次博客了。从一开始大学学习编程的时候，先后写过TP和Laravel版本的PHP博客，从前端到后端到部署，都是自己一个人瞎捉摸的，那是腾讯云还有一块钱一个月的云服务器，那是还跑了挺久。以后改写Python后，还用Django把之前PHP版本的博客重写了，直到现在工作了，也还有在折腾博客。每次的折腾，好像都总能学到新东西。</p>
+<p>这次后面应该就都会只用github pages来做笔记拉。（可能是因为穷，养不起服务器吧哈哈哈，当然后面的思路会把md渲染的样式给弄得好看一些），这个的思路是借鉴了一篇文章，地址是：<a href="https://ops-coffee.cn/s/7g2wncQG1lIziOmtBxXwEw">https://ops-coffee.cn/s/7g2wncQG1lIziOmtBxXwEw</a></p>
+<p><img src="/media/editor/pyblog_20200128144523789450.png" alt=""></p>
+<p><strong>整体思路</strong></p>
+<p>有点不同于原博主37丫，我将生成文章HTML的逻辑放到了Django后台admin里的动作action里了，可能也是为了图省事，当然之后就是将生成的静态文件推到github page的仓库上了。为了简单，只有两个页面，一个自然是列表页，列表页里显示所有的文章归档，二是文章的详情页。</p>
+<p><strong>所用技术</strong></p>
+<p>Django的模板渲染，gitpython上传git，Django-admin的action。整体还是很简单的，下面就来一个个的记录（只能贴部分代码，完整代码需要看仓库，因为太多啦而且也自取不了233）</p>
+<p><strong>模板渲染</strong>，用到了<code>from django.template import Template, Context</code>，跟平常的模板那样用就行，根据分类/文章名保存HTML文件到自己的仓库，然后用git推到远程仓库就行。当然为了能有一些友好的错误信息，需要做一些异常错误的处理，并将错误信息返回给调用处，这边的错误信息后面会有用到的。当然这里的样式文件啥的，必须得先准备好在<em>github-page</em>的那个仓库里，且需要找个能将<code>markdown</code>渲染成<code>HTML</code>的模块。</p>
+<div class="highlight"><pre><span></span><span class="n">template</span> <span class="o">=</span> <span class="s2">&quot;&quot;&quot;</span>
+<span class="s2">&lt;!DOCTYPE html&gt;</span>
+<span class="s2">&lt;div id=&quot;content-wrapper&quot;&gt;</span>
+<span class="s2">    &lt;div class=&quot;inner clearfix&quot;&gt;</span>
+<span class="s2">        &lt;section id=&quot;main-content&quot;&gt;</span>
+
+<span class="s2">            {</span><span class="si">% i</span><span class="s2">f display_title %}</span>
+<span class="s2">                &lt;h1 id=&quot;art-title&quot;&gt;{{ title }}&lt;/h1&gt;</span>
+<span class="s2">            {</span><span class="si">% e</span><span class="s2">ndif %}</span>
+
+<span class="s2">            {</span><span class="si">% i</span><span class="s2">f content %}</span>
+<span class="s2">                {{ content|safe }}</span>
+<span class="s2">            {</span><span class="si">% e</span><span class="s2">ndif %}</span>
+
+<span class="s2">            {</span><span class="si">% i</span><span class="s2">f article_list %}</span>
+<span class="s2">                &lt;div class=&quot;entry-content&quot;&gt;</span>
+<span class="s2">                    {</span><span class="si">% r</span><span class="s2">egroup article_list by add_time.year as year_list %}</span>
+<span class="s2">                    &lt;ul&gt;</span>
+<span class="s2">                        {</span><span class="si">% f</span><span class="s2">or year in year_list %}</span>
+<span class="s2">                        &lt;li&gt;{{ year.grouper }} 年</span>
+<span class="s2">                            {</span><span class="si">% r</span><span class="s2">egroup year.list by add_time.month as month_list %}</span>
+<span class="s2">                            &lt;ul&gt;</span>
+<span class="s2">                                {</span><span class="si">% f</span><span class="s2">or month in month_list %}</span>
+<span class="s2">                                &lt;li&gt;{{ month.grouper }} 月</span>
+<span class="s2">                                    &lt;ul&gt;</span>
+<span class="s2">                                        {</span><span class="si">% f</span><span class="s2">or article in month.list %}</span>
+<span class="s2">                                        &lt;li&gt;&lt;a href=&quot;{{ article.get_github_page_url }}&quot;&gt;{{ article.title }}&lt;/a&gt;&lt;/li&gt;</span>
+<span class="s2">                                        {</span><span class="si">% e</span><span class="s2">ndfor %}</span>
+<span class="s2">                                    &lt;/ul&gt;</span>
+<span class="s2">                                &lt;/li&gt;</span>
+<span class="s2">                                {</span><span class="si">% e</span><span class="s2">ndfor %}</span>
+<span class="s2">                            &lt;/ul&gt;</span>
+<span class="s2">                        &lt;/li&gt;</span>
+<span class="s2">                        {</span><span class="si">% e</span><span class="s2">ndfor %}</span>
+<span class="s2">                    &lt;/ul&gt;</span>
+<span class="s2">                &lt;/div&gt;</span>
+<span class="s2">            {</span><span class="si">% e</span><span class="s2">ndif %}</span>
+
+<span class="s2">        &lt;/section&gt;</span>
+<span class="s2">&quot;&quot;&quot;</span>
+
+
+<span class="k">class</span> <span class="nc">HtmlRender</span><span class="p">:</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">blog_dir</span> <span class="o">=</span> <span class="n">settings</span><span class="o">.</span><span class="n">GITHUB_PAGE_DIR</span>
+
+    <span class="k">def</span> <span class="nf">index</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">blog_setting</span><span class="p">,</span> <span class="n">article_list</span><span class="p">,</span> <span class="n">link_list</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        渲染首页的HTML, 也就是文章归档页</span>
+<span class="sd">        :param blog_setting 一些配置项</span>
+<span class="sd">        :param article_list 文章列表(需要按照时间有序)</span>
+<span class="sd">        :param link_list    友情链接列表</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">settings</span><span class="o">.</span><span class="n">GITHUB_PAGE</span><span class="p">:</span>
+            <span class="k">return</span> <span class="bp">False</span><span class="p">,</span> <span class="s1">&#39;Do not enable GITHUB_PAGE&#39;</span>
+
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">context</span> <span class="o">=</span> <span class="n">Context</span><span class="p">({</span>
+                <span class="s2">&quot;title&quot;</span><span class="p">:</span> <span class="n">blog_setting</span><span class="o">.</span><span class="n">name</span><span class="p">,</span>
+                <span class="s2">&quot;content&quot;</span><span class="p">:</span> <span class="s2">&quot;文章归档页&quot;</span><span class="p">,</span>
+                <span class="s2">&quot;description&quot;</span><span class="p">:</span> <span class="n">blog_setting</span><span class="o">.</span><span class="n">desc</span><span class="p">,</span>
+                <span class="s2">&quot;github_user&quot;</span><span class="p">:</span> <span class="n">blog_setting</span><span class="o">.</span><span class="n">github_user</span><span class="p">,</span>
+                <span class="s2">&quot;github_avatar&quot;</span><span class="p">:</span> <span class="n">blog_setting</span><span class="o">.</span><span class="n">github_avatar</span><span class="p">,</span>
+                <span class="s2">&quot;about_me&quot;</span><span class="p">:</span> <span class="n">blog_setting</span><span class="o">.</span><span class="n">about_me</span><span class="p">,</span>
+                <span class="s2">&quot;article_list&quot;</span><span class="p">:</span> <span class="n">article_list</span><span class="p">,</span>
+                <span class="s2">&quot;link_list&quot;</span><span class="p">:</span> <span class="n">link_list</span><span class="p">,</span>
+            <span class="p">})</span>
+            <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">blog_dir</span> <span class="o">+</span> <span class="s1">&#39;/index.html&#39;</span><span class="p">,</span> <span class="s1">&#39;w&#39;</span><span class="p">,</span> <span class="n">encoding</span><span class="o">=</span><span class="s1">&#39;utf8&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">ff</span><span class="p">:</span>
+                <span class="n">ff</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">Template</span><span class="p">(</span><span class="n">template</span><span class="p">)</span><span class="o">.</span><span class="n">render</span><span class="p">(</span><span class="n">context</span><span class="p">))</span>
+
+            <span class="k">return</span> <span class="n">SyncGit</span><span class="p">()</span><span class="o">.</span><span class="n">sync</span><span class="p">()</span>
+
+        <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+            <span class="k">return</span> <span class="bp">False</span><span class="p">,</span> <span class="nb">str</span><span class="p">(</span><span class="n">e</span><span class="p">)</span>
+</pre></div>
+<p><strong>Git推</strong>，这里严格来讲应该是需要写一个接口来调用啥的，不过我为了能在后台一并处理，也是将调用处写在了admin里的一个action中，只不过这个action是作用于网站站点配置项这个Model里的。</p>
+<p>这里的调用就相对简单了，正常的依次调用<code>add/commit/push</code>即可，只不过需要你原本在那个仓库里，有正常的ssh上传权限。</p>
+<div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">git</span> <span class="kn">import</span> <span class="n">Repo</span>
+
+<span class="k">class</span> <span class="nc">SyncGit</span><span class="p">:</span>
+    <span class="sd">&quot;&quot;&quot; Git上传, 需要有对应setting里的项目目录, 且可以经过ssh上传github &quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">repo</span> <span class="o">=</span> <span class="n">Repo</span><span class="p">(</span><span class="n">settings</span><span class="o">.</span><span class="n">GITHUB_PAGE_DIR</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">sync</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">add_all</span><span class="o">=</span><span class="bp">True</span><span class="p">,</span> <span class="n">commit</span><span class="o">=</span><span class="s1">&#39;add post&#39;</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="s1">&#39;origin&#39;</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; 同步文章到github page的仓库 &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">settings</span><span class="o">.</span><span class="n">GITHUB_PAGE</span><span class="p">:</span>
+            <span class="k">return</span> <span class="bp">False</span><span class="p">,</span> <span class="s1">&#39;Do not enable GITHUB_PAGE&#39;</span>
+
+        <span class="k">try</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">add_all</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">commit</span><span class="p">(</span><span class="n">commit</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">push</span><span class="p">(</span><span class="n">name</span><span class="p">)</span>
+            <span class="k">return</span> <span class="bp">True</span><span class="p">,</span> <span class="s1">&#39;Github page synced Successful&#39;</span>
+
+        <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+            <span class="n">logging</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">e</span><span class="p">))</span>
+            <span class="k">return</span> <span class="bp">False</span><span class="p">,</span> <span class="nb">str</span><span class="p">(</span><span class="n">e</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">add</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">add_all</span><span class="o">=</span><span class="bp">True</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">repo</span><span class="o">.</span><span class="n">git</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">A</span><span class="o">=</span><span class="n">add_all</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">commit</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">commit</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">repo</span><span class="o">.</span><span class="n">index</span><span class="o">.</span><span class="n">commit</span><span class="p">(</span><span class="n">commit</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">push</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="s1">&#39;origin&#39;</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">repo</span><span class="o">.</span><span class="n">remote</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="n">name</span><span class="p">)</span><span class="o">.</span><span class="n">push</span><span class="p">()</span>
+</pre></div>
+<p><strong>admin里的action</strong>，这里的基础知识就略过啦，思路就是在后台admin对选中的文章进行操作，生成静态文件，并且提示出来友好的提示信息。<em>message_user</em>方法可以给后台页面返回友好的信息，其中还有稍微用到了下<em>partial偏函数</em>节省了点代码量，对于偏函数，我在前面也有做过一些相关的笔记。</p>
+<p>使用<code>render_detail_html</code>渲染文章的HTML页面，使用<code>render_index_html</code>渲染首页里的列表页并推送到远程仓库，整体写文章就变得很简单。先写个md的笔记，然后用admin添加，之后生成并且推送。唯一的缺点现在是图片没办法自动弄过去，还是得在admin里插入图片后，再把相关图片自己复制过去2333</p>
+<div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">render_detail_html</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">request</span><span class="p">,</span> <span class="n">queryset</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; 创建文章html &quot;&quot;&quot;</span>
+        <span class="kn">from</span> <span class="nn">utils.github_page</span> <span class="kn">import</span> <span class="n">HtmlRender</span>
+
+        <span class="n">blog_setting</span> <span class="o">=</span> <span class="n">Setting</span><span class="o">.</span><span class="n">objects</span><span class="o">.</span><span class="n">all</span><span class="p">()</span><span class="o">.</span><span class="n">first</span><span class="p">()</span>
+        <span class="n">success</span><span class="p">,</span> <span class="n">error</span> <span class="o">=</span> <span class="p">[],</span> <span class="p">[]</span>
+        <span class="n">error_info</span> <span class="o">=</span> <span class="p">[]</span>
+
+        <span class="k">for</span> <span class="n">article</span> <span class="ow">in</span> <span class="n">queryset</span><span class="p">:</span>
+            <span class="n">result</span><span class="p">,</span> <span class="n">info</span> <span class="o">=</span> <span class="n">HtmlRender</span><span class="p">()</span><span class="o">.</span><span class="n">detail</span><span class="p">(</span><span class="n">blog_setting</span><span class="p">,</span> <span class="n">article</span><span class="p">)</span>
+            <span class="n">_</span> <span class="o">=</span> <span class="n">success</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">article</span><span class="o">.</span><span class="n">title</span><span class="p">)</span> <span class="k">if</span> <span class="n">result</span> <span class="k">else</span> <span class="p">(</span><span class="n">error</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">article</span><span class="p">)</span> <span class="ow">or</span> <span class="n">error_info</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">info</span><span class="p">))</span>
+
+        <span class="n">message</span> <span class="o">=</span> <span class="s1">&#39;&#39;</span>
+        <span class="k">if</span> <span class="n">success</span><span class="p">:</span>
+            <span class="n">message</span> <span class="o">+=</span> <span class="n">f</span><span class="s1">&#39;{success} successfully&#39;</span>
+        <span class="k">if</span> <span class="n">error_info</span><span class="p">:</span>
+            <span class="n">message</span> <span class="o">+=</span> <span class="n">f</span><span class="s1">&#39;{error} unsuccessfully, {error_info}&#39;</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">message_user</span><span class="p">(</span><span class="n">request</span><span class="p">,</span> <span class="n">message</span><span class="p">)</span>
+
+    <span class="n">render_detail_html</span><span class="o">.</span><span class="n">short_description</span> <span class="o">=</span> <span class="s1">&#39;给所选的文章创建HTML静态文件&#39;</span>
+
+    <span class="k">def</span> <span class="nf">render_index_html</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">request</span><span class="p">,</span> <span class="n">queryset</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; 创建博客首页index_html &quot;&quot;&quot;</span>
+        <span class="kn">from</span> <span class="nn">functools</span> <span class="kn">import</span> <span class="n">partial</span>
+        <span class="kn">from</span> <span class="nn">utils.github_page</span> <span class="kn">import</span> <span class="n">HtmlRender</span>
+
+        <span class="n">blog_setting</span> <span class="o">=</span> <span class="n">queryset</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="n">article_list</span> <span class="o">=</span> <span class="n">Article</span><span class="o">.</span><span class="n">objects</span><span class="o">.</span><span class="n">all</span><span class="p">()</span><span class="o">.</span><span class="n">order_by</span><span class="p">(</span><span class="s1">&#39;-add_time&#39;</span><span class="p">)</span>
+        <span class="n">link_list</span> <span class="o">=</span> <span class="n">Link</span><span class="o">.</span><span class="n">objects</span><span class="o">.</span><span class="n">filter</span><span class="p">(</span><span class="n">is_enable</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span><span class="o">.</span><span class="n">all</span><span class="p">()</span>
+
+        <span class="n">result</span><span class="p">,</span> <span class="n">info</span> <span class="o">=</span> <span class="n">HtmlRender</span><span class="p">()</span><span class="o">.</span><span class="n">index</span><span class="p">(</span><span class="n">blog_setting</span><span class="p">,</span> <span class="n">article_list</span><span class="p">,</span> <span class="n">link_list</span><span class="p">)</span>
+
+        <span class="n">message_user</span> <span class="o">=</span> <span class="n">partial</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">message_user</span><span class="p">,</span> <span class="n">request</span><span class="o">=</span><span class="n">request</span><span class="p">,</span> <span class="n">message</span><span class="o">=</span><span class="n">info</span><span class="p">)</span>
+        <span class="n">message_user</span><span class="p">(</span><span class="n">level</span><span class="o">=</span><span class="mi">20</span><span class="p">)</span> <span class="k">if</span> <span class="n">result</span> <span class="k">else</span> <span class="n">message_user</span><span class="p">(</span><span class="n">level</span><span class="o">=</span><span class="mi">40</span><span class="p">)</span>
+
+    <span class="n">render_index_html</span><span class="o">.</span><span class="n">short_description</span> <span class="o">=</span> <span class="s1">&#39;更新首页并且同步github-page&#39;</span>
+</pre></div>
+<p>最后的实现图：
+<img src="/media/editor/render_detail_20200128144545085522.png" alt="">
+<img src="/media/editor/render_index_20200128144615321790.png" alt="">
+<img src="/media/editor/admin_20200128144754769173.png" alt=""></p>
+
+            
+            
+            
+
+        </section>
+
+        <aside id="sidebar">
+            <blockquote class="route">关于我</blockquote>
+            <p>19本科毕业生，代码的搬运工。由于水平有限，笔记不全然是正确的，有问题欢迎交流~</p>
+            
+            <blockquote class="route">Github地址</blockquote>
+            <a href="https://github.com/enjoy-binbin">
+                <img border="0" src="https://avatars2.githubusercontent.com/u/22811481" width="100%" height="100%" alt="enjoy-binbin"/>
+            </a>
+            
+            
+        </aside>
+    </div>
+</div>
+</body>
+
+</html>
