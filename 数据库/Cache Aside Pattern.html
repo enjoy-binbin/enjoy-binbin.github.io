@@ -1,0 +1,103 @@
+
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1"/>
+    <meta name="copyright" content="©2020 Binblog所有"/>
+    <link rel="stylesheet" href="/static/style.min.css" media="screen" type="text/css"/>
+
+    <!-- Begin SEO tag -->
+    <title>Cache Aside Pattern</title>
+    <meta property="og:locale" content="zh_CN"/>
+    <meta property="og:type" content="article"/>
+    <meta property="og:title" content="Cache Aside Pattern"/>
+    <meta property="og:description" content="Cache Aside Pattern"/>
+    <meta property="og:site_name" content="Cache Aside Pattern"/>
+    <meta name="description" content="Cache Aside Pattern"/>
+    <!-- End SEO tag -->
+</head>
+
+<body>
+<header>
+    <div class="inner">
+        <a href="/">
+            <h1>彬彬同学丶</h1>
+        </a>
+        <h2>Choose what you love. Love what you choose.</h2>
+    </div>
+</header>
+
+<div id="content-wrapper">
+    <div class="inner clearfix">
+        <section id="main-content">
+        
+            
+                <h1 id="art-title">Cache Aside Pattern</h1>
+            
+            
+            
+                <p><em>缓存的重要性，不言而喻，从操作系统到应用软件，计算机多级缓存，数据库缓存池，大量地方都有用到缓存的概念，用来加速读(热数据冗余)。这里简单记录下缓存与数据库之间，如何解决不一致的情况。</em></p>
+<p><strong>题目：</strong></p>
+<p>如何保证缓存与数据库的双写一致性？</p>
+<p>一般来说，系统如果不是严格要求<strong>缓存和数据库</strong>必须保持一致性的话，都不会用串行化方案，即读请求和写请求串行化执行。串行化可以保证一定不会出现不一致的情况，但是它也会导致系统的吞吐量严重降低，就如MySQL串行化隔离级别，基本很少会去用。</p>
+<h4>Cache Aside Pattern 旁路缓存</h4>
+<p>最经典的缓存+数据库读写的模式，就是 Cache Aside Pattern了，分为读和写两个实践</p>
+<p>读数据：先读缓存，有的话返回，没有的话再去读数据库db，取出数据后放入缓存，同时返回。</p>
+<p>更新数据：先更新数据库db，再<strong>删除</strong>缓存（淘汰缓存）。（并且希望两个的操作是原子性的）</p>
+<p><em>PS：更新这里还有个用法是 先删除缓存，再更新数据库，看下面，更多是折中和取舍，并没有那么完美的方法，且经常并发更新的数据也不适合做缓存，且大多一致性并不是强一致性，只是最终一致性。</em></p>
+<p><strong>为什么是删除缓存，而不是更新缓存？</strong></p>
+<p>第一：就像是一些ORM里的懒加载，lazy的思想，只有在<strong>用到</strong>的时候才会真的去查。缓存的计算有时候可能会耗资源，而且也不一定每次修改db后都去更新他相应的缓存，更好的做法是直接删了相关的缓存，然后如果要读的话，就再读后写入缓存，只有在用到的时候才去计算。</p>
+<p>第二：在并发的情况下，会出现不一致。例如请求1先操作数据库，请求2后操作数据库，请求2先set了缓存，请求1后set了缓存，这里最后就会出现db和cache不一致的情况</p>
+<h2>缓存不一致问题</h2>
+<p><strong>1. 先更新db，再删除cache，如果这时候cache删除失败？</strong></p>
+<p>如果cache删除失败，db是新数据，而cache中是老数据，下次读请求来的时候，就命中老数据了。</p>
+<p>如果db更新就失败了，可以直接返回50X给调用方</p>
+<p><strong>解决思路：</strong>先删除cache，再更新db。如果db更新失败，那么cache中也没有数据，不会不一致。</p>
+<p><strong>Cache Aside Pattern为什么建议先更新数据库，再删除缓存？</strong></p>
+<p>因为考虑到在主从模式下，master和salve中间的复制 可能会存在延迟，如果先删除缓存，在并发读写的时候，主库更新了，但是从库还没更新，此时一个读请求过来，没命中缓存就去查数据库，请求到了读库，就会返回老数据，就出现了缓存不一致。（不完美解决方法：1. 订阅binlog，从库更新完删除延迟时间里可能写入的缓存 2. 强制读主库）</p>
+<p><strong>2. 高并发的情况下，在上面删除cache 和 更新db之间，如果有读请求过来呢？</strong></p>
+<p>此时更新db因为某些原因还没有完成，读请求过来，发现cache是空的，于是去查了db，将老数据写入了cache，之后前面的那个更新db的操作终于完成，出现不一致。</p>
+<p><strong>解决思路：</strong></p>
+<p>串行化的思想，设置数据的<strong>唯一标识</strong>，将上面更新操作以及对这个数据的查询操作（没有读到cache去读db的时候，读到后更新缓存的操作），都串行化处理。注意：是将更新缓存的操作串行化。</p>
+<p>这样的话，一个数据变更的操作，先删除缓存，然后再去更新数据库，但是还没完成更新。此时如果一个读请求过来，没有读到缓存，那么可以先将缓存更新的请求发送到队列中，此时会在队列中积压，然后同步等待缓存更新完成。这样后者读的时候，虽然数据不是更新后的，但是在那一时刻，是新的。例如InnoDB中的快照读</p>
+<p>这里有个优化点，如果并发也多，同个数据的多个<strong>缓存更新操作</strong>可以做过滤不串起来。</p>
+<p><strong>注意点：</strong></p>
+<ol>
+<li><p>读请求不能超时，根据需要可以返回那一时刻的老数据，或者轮询 阻塞，不过不可以过长</p>
+</li>
+<li><p>数据更新频繁，积压大量的db更新操作，同时缓存由于删除，会有大量读请求会直接打入db，需要注意</p>
+</li>
+<li>数据更新频繁，积压大量的db更新操作，最后面的更新操作也需要注意阻塞和耗时</li>
+<li>互联网里更多是读多写少的场景，上面方法需要结合业务场景进行压测多实例部署模拟啥的</li>
+<li>频繁更新的数据就不用做缓存了，队列异步去处理</li>
+<li>缓存的话，总是会有出现不一致的情况，需要强一致性得考虑分布式锁</li>
+</ol>
+<p><strong>最后，结合自己的理解总结</strong></p>
+<p>（1）读请求，先读缓存，如果没有命中，读数据库，再set回缓存</p>
+<p>（2）写请求，先删除缓存，在更新数据库</p>
+<p>（2.1）先缓存，再数据库</p>
+<p>（2.2）缓存，使用delete删除缓存，而不是set更新缓存</p>
+
+            
+            
+            
+
+        </section>
+
+        <aside id="sidebar">
+            <blockquote class="route">关于我</blockquote>
+            <p>19本科毕业生，代码的搬运工。由于水平有限，笔记不全然是正确的，有问题欢迎交流~</p>
+            
+            <blockquote class="route">Github地址</blockquote>
+            <a href="https://github.com/enjoy-binbin">
+                <img border="0" src="https://avatars2.githubusercontent.com/u/22811481" width="100%" height="100%" alt="enjoy-binbin"/>
+            </a>
+            
+            
+        </aside>
+    </div>
+</div>
+</body>
+
+</html>
